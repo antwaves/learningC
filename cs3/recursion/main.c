@@ -21,12 +21,13 @@ void* get_data(struct Node* node);
 void assign_data(struct Node* node, void* data);
 struct Node* append(struct Node* node, void* element, enum Types type);
 struct Node* append_to_node(struct Node* node, void* element, enum Types type);
-void* index_into(struct Node* first_node, int index);
+struct Node* index_into(struct Node* first_node, int index);
 
 int factorial(int n);
 int fibonacci(int n);
 float power2(int n);
 int total(struct Node* nums, int index);
+bool contains(struct Node* list, int index, void* element, enum Types type);
 
 
 int main() {
@@ -40,13 +41,13 @@ int main() {
     for (int i = 0; i < sizeof(numbers) / sizeof(int); i++) {
         append(nums, &numbers[i], INT);
     }
-    printf("%d", total(nums, 0));
+    printf("%d\n", total(nums, 0));
 
 
     struct Node* l = linked_list();
 
     struct Node* char_list = linked_list();
-    char letters[] = "asdf";
+    char letters[] = {'a', 's', 'd', 'f'};
     for (int i = 0; i < sizeof(letters) / sizeof(char); i++) {
         append(char_list, &letters[i], CHAR);
     }
@@ -54,11 +55,12 @@ int main() {
     char letter = 'd';
     int number = 0;
 
-    append(l, char_list, NODE);
+    append(l, char_list, START_NODE);
     append(l, &letter, CHAR);
     append(l, &number, INT);
 
-    
+    char element = 's';
+    printf("%s", contains(l, 0, &element, CHAR) ? "True" : "False");
 }
 
 
@@ -71,13 +73,14 @@ struct Node* linked_list(){
 
 
 struct Node* append(struct Node* node, void* element, enum Types type) {
-    struct Node* next_node = node;
+    struct Node* next_node = node; 
     struct Node* temp;
 
     while (next_node != NULL) {
-        temp = next_node;
+        temp = next_node; 
         next_node = next_node->next;
     }
+
     return append_to_node(temp, element, type);
 }
 
@@ -94,16 +97,22 @@ struct Node* append_to_node(struct Node* node, void* element, enum Types type) {
             element = (struct Node*)element;
             break;
         case START_NODE:
-            return NULL;
+            element = (struct Node*)element;
+            break;
+    }
+
+    if (type == START_NODE) {
+        node->next = element;
+        return element;
     }
 
     int node_size = sizeof(struct Node);
     struct Node* n = (struct Node*)malloc(node_size);
+    node->next = n;
     n->type = type;
     assign_data(n, element);
-    node->next = n;
     n->next = NULL;
-
+    
     return n;
 }
 
@@ -140,7 +149,7 @@ void* get_data(struct Node* node) {
 }
 
 
-void* index_into(struct Node* first_node, int index) {
+struct Node* index_into(struct Node* first_node, int index) {
     if (index < 0) { return NULL; }
     
     struct Node* current = first_node->next;
@@ -150,7 +159,7 @@ void* index_into(struct Node* first_node, int index) {
     }
 
     if (current == NULL) { return NULL; }
-    return get_data(current);
+    return current;
 }
 
 
@@ -187,12 +196,46 @@ float power2(int n) {
 
 
 int total(struct Node* nums, int index) {
-    int* data = (int*)index_into(nums, index);
+    struct Node* n = index_into(nums, index);
+
+    if (n == NULL) { return 0; }
+    int* data = (int*)get_data(n);
 
     if (data == NULL) { return 0; }
     if (!(nums->type == INT || nums->type == START_NODE)) {return 0;} 
 
-
     return *data + total(nums, index + 1);
 }
 
+
+bool contains(struct Node* list, int index, void* element, enum Types type) {
+    struct Node* node_data = index_into(list, index);
+    bool comparison;
+
+    if (node_data == NULL) { return false; }
+
+    if (node_data->type == START_NODE){
+        comparison = contains(node_data, 0, element, type);
+    }
+    else if (node_data->type != type) { 
+        comparison = false; 
+    }
+    else {
+        switch (type) {
+            case INT:
+                comparison = *((int*)get_data(node_data)) == *((int*)element);
+                break;
+            case CHAR:
+                comparison = *((char*)get_data(node_data)) == *((char*)element);
+                break;
+            case NODE:
+                comparison = contains(node_data, 0, element, type);
+                break;
+            case START_NODE:
+                comparison = contains(node_data, 0, element, type);;
+                break;
+        }
+    }
+
+    return comparison || contains(list, index + 1, element, type);
+}
