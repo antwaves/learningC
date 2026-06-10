@@ -4,45 +4,84 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
+#include <time.h>
+#include <vcruntime.h>
+
+#include "../../dict/src/hash_table.c"
 
 int count_tokens(char* string, const char delimiter);
 char** split(char* string, const char delimiter);
-void replace(char* string, const char a, const char b);
+void replace(char string[], const char a, const char b);
 
 
 int main() {
     FILE* file;
-    errno_t err = fopen_s(&file, "alice.txt", "r");
+    errno_t err = fopen_s(&file, "alice.txt", "r"); 
     if (file == NULL) {
         printf("Failed to open file");
         return 1;
     }
 
     char** words;
+    char** temp_words = {NULL};
     int words_to_allocate = 0;
     char buffer[1024] = {'\0'};
 
     while (fgets(buffer, sizeof(buffer), file) != NULL) {
-
+        replace(buffer, '\n', ' ');
         words_to_allocate += count_tokens(buffer, ' ');
     }
+    words_to_allocate++; // for final null terminator
     fseek(file, 0, SEEK_SET);
 
-    words_to_allocate++; // for final null terminator
+    char** current_word = NULL;
     words = malloc(sizeof(char*) * words_to_allocate);
-
+    int word_index = 0;
     while (fgets(buffer, sizeof(buffer), file) != NULL) {
-        //temp_words = split(buffer, ' ');
+        replace(buffer, '\n', ' ');
+        temp_words = split(buffer, ' ');
+
+        current_word = temp_words;
+        while (*current_word) {
+            words[word_index++] = *current_word;
+            current_word++;
+        }
+
+        char buffer[1024] = {'\0'};
     }
 
+    words[word_index] = NULL;
+    free(temp_words);
     fclose(file);
+
+    ht_hash_table* best_words = ht_new();
+    ht_hash_table* best_scores = ht_new();
+    ht_hash_table* letter_points = ht_new();
+
+    char letters[][2] = {"a","b","c","d","e","f","g","h","i", "j", "k", "l","m",
+                         "n","o","p","q","r","s","t","u","v","w","x","y","z"};
+
+    char scores[][3] =  {"1", "3", "3", "2", "1", "4", "2", "4", "1", "8", 
+                         "5", "1", "3", "1", "1", "3", "10", "1", "1", "1", 
+                         "1", "4", "4", "8", "4", "10"};
+
+    
+    for (int i = 0; i < 26; i++) {
+        ht_insert(letter_points, letters[i], scores[i]);
+    }
+
+
+    free(words);
+    ht_del_hash_table(best_words);
+    ht_del_hash_table(best_scores);
+    ht_del_hash_table(letter_points);
 }
 
 
-int count_tokens(char* string, const char delimiter) {
-    char* current_character;
-    bool was_last_delimiter;
-    int to_allocate;
+int count_tokens(char* string, const char delimiter) { // counts the number of tokens in a string based on a given delimiter
+    char* current_character = NULL;
+    bool was_last_delimiter = false;
+    int to_allocate = 0;
 
     current_character = string;
     while (*current_character) {
@@ -67,7 +106,7 @@ int count_tokens(char* string, const char delimiter) {
 }
 
 
-char** split(char* string, const char delimiter) {
+char** split(char* string, const char delimiter) { // splits a string based on a delimiter
     char** result = 0;
     int size_of_str = strlen(string) + 1; // add for null terminator (same for to_allocate)
     int to_allocate = count_tokens(string, delimiter) + 1;
@@ -77,14 +116,12 @@ char** split(char* string, const char delimiter) {
     char* n_str = malloc(in_bytes);
     strcpy_s(n_str, in_bytes, string);
 
+    size_t index = 0;
     if (n_str && result) {
-        char delim[2];
-        delim[0] = delimiter;
-        delim[1] = 0;
+        const char* delim = &delimiter;
 
         char* current_token;
         char* context = NULL;
-        size_t index = 0;
         char* token = strtok_s(n_str, delim, &context);
 
         while (token)
@@ -94,6 +131,21 @@ char** split(char* string, const char delimiter) {
         }
     }
 
-    *(result + to_allocate - 1) = NULL;
+    free(n_str);
+    *(result + index) = NULL;
     return result;
+}
+
+
+void replace(char string[], char a, char b) { // replaces character a with character b in a given string
+    char* current_character = string;
+    size_t index = 0;
+    while (*current_character) {
+        if (*current_character == a) {
+            string[index] = b;
+        }
+        
+        index++;
+        current_character++;
+    }
 }
