@@ -21,7 +21,11 @@ int main() {
         printf("Failed to open file");
         return 1;
     }
-    
+
+    char letters_to_check[26];
+    printf("What letters do you want to look for?");
+    fgets(letters_to_check, 26, stdin);
+
 
     char** words = NULL;
     char** temp_words = NULL;
