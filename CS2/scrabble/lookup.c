@@ -5,7 +5,6 @@
 #include <stdbool.h>
 #include <string.h>
 #include <time.h>
-#include <vcruntime.h>
 
 #include "../../dict/src/hash_table.c"
 
@@ -22,9 +21,11 @@ int main() {
         return 1;
     }
 
-    char letters_to_check[26];
-    printf("What letters do you want to look for?");
-    fgets(letters_to_check, 26, stdin);
+    char letters_to_check[27] = {'\0'};
+    printf("What letters do you want to look for?: ");
+    fgets(letters_to_check, 27, stdin);
+    letters_to_check[strlen(letters_to_check) - 1] = '\0';
+    int check_len = strlen(letters_to_check);
 
 
     char** words = NULL;
@@ -45,11 +46,46 @@ int main() {
     while (fgets(buffer, sizeof(buffer), file) != NULL) {
         replace(buffer, '\n', ' ');
         temp_words = split(buffer, ' ');
-
         current_word = temp_words;
+        
         while (*current_word != NULL) {
-            words[word_index++] = *current_word;
+            bool contains_all = true;
+
+            int w_len = strlen(*current_word);
+            bool* to_ignore_w = malloc(strlen(*current_word) * sizeof(bool));
+            bool *to_ignore_l = malloc(strlen(letters_to_check) * sizeof(bool));
+            int ignored_letters = 0;
+                
+            for (int i = 0; i < check_len; i++) {
+                bool contains = true;
+                for (int j = 0; j < w_len; j++) {
+                    if ((*current_word)[j] == letters_to_check[i] && !to_ignore_w[j] && !to_ignore_l[i]) {
+                        to_ignore_w[j] = true;
+                        to_ignore_l[i] = true;
+                        ignored_letters++;
+                    }
+                }
+            }
+
+
+            if (ignored_letters == check_len) {
+                bool contained = false;
+                for (int i = 0; i < word_index; i++) {
+                    if (strcmp(words[i], *current_word) == 0) {
+                        contained = true;
+                    }
+                }
+                
+                if (!contained) {
+                    printf("%s\n", *current_word);
+
+                    words[word_index++] = *current_word;
+                }
+            }
+        
             current_word++;
+            free(to_ignore_w);
+            free(to_ignore_l);
         }
 
         free(temp_words);
@@ -58,10 +94,8 @@ int main() {
     words[word_index] = NULL;
     fclose(file);
 
-    ht_hash_table* best_words = ht_new();
-    ht_hash_table* best_scores = ht_new();
-    ht_hash_table* letter_points = ht_new();
 
+    ht_hash_table* letter_points = ht_new();
     char letters[][2] = {"a","b","c","d","e","f","g","h","i", "j", "k", "l","m",
                          "n","o","p","q","r","s","t","u","v","w","x","y","z"};
 
@@ -96,36 +130,13 @@ int main() {
             best_score = word_score;
         }
 
-        char word_score_buffer[20];
-        _itoa_s(word_score, word_score_buffer, 20, 10);
-
-        letter[0] = c_word[0];
-
-        if (ht_search(best_words, letter) != NULL) {
-            if (word_score > atoi(ht_search(best_scores, ht_search(best_words, letter)))) {
-                ht_insert(best_words, letter, c_word);
-                ht_insert(best_scores, c_word, word_score_buffer);
-            } else {
-            }
-        } 
-        else {
-            ht_insert(best_words, letter, c_word);
-            ht_insert(best_scores, c_word, word_score_buffer);
-        }
     }           
 
-    for (int i = 0; i < 26; i++) {
-        char* l = letters[i];
-        char* w = ht_search(best_words, l);
-        printf("%s %s %s\n", l, w, ht_search(best_scores, w));
-    }
 
     printf("\n%s %d", best_word, best_score);
  
     for (int i = 0; i < word_index; i++) { free(words[i]); }
     free(words);
-    ht_del_hash_table(best_words);
-    ht_del_hash_table(best_scores);
     ht_del_hash_table(letter_points);
 
     return 0;

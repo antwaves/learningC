@@ -22,7 +22,6 @@ int main() {
         return 1;
     }
     
-
     char** words = NULL;
     char** temp_words = NULL;
     int words_to_allocate = 0;
