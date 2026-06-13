@@ -33,7 +33,6 @@ int main() {
         }
     }
 
-
     int index = 0;
     unsigned char r, g, b;
     int transformed_index;
