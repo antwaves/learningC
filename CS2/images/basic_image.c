@@ -56,7 +56,7 @@ int main() {
                     rgb_to_data(gr_data, i, r, g, b);
                 }
 
-                rgb_to_data(i_data, i, 255 - r, 255 - g, 255 - b);
+                rgb_to_data(i_data, i, 255 - r, 255 - g, 255 - b); // inverted
                 
 
 
