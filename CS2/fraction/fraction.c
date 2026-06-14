@@ -104,7 +104,8 @@ Fraction sub(void* self, enum input_type self_type, void* other, enum input_type
     }   
 
     if (other_type == FRACTION) {
-        return sub(other, other_type, self, self_type);
+        Fraction f = {*((int*)self), 1};
+        return sub(&f, FRACTION, other, other_type);
     }
 
     Fraction f = {*((int*)self) - *((int*)other), 1};
@@ -151,21 +152,32 @@ int main() {
     int x = 6;
     Fraction r = mul(&t, FRACTION, &f, FRACTION);
     Fraction r2 = mul(&t, FRACTION, &x, INT);
-    printf("\nTest multiplication:\na * 2/3 = %s\na * 6 =", repr(&r, buffer));
+    printf("\nTest multiplication:\nt * 2/3 = %s\nt * 6 =", repr(&r, buffer));
     printf(" %s\n", repr(&r2, buffer));
 
     r = div(&t, FRACTION, &f, FRACTION);
     r2 = div(&t, FRACTION, &x, INT);
-    printf("\nTest division:\na / 2/3 = %s\na / 6 =", repr(&r, buffer));
+    printf("\nTest division:\nt / 2/3 = %s\nt / 6 =", repr(&r, buffer));
     printf(" %s\n", repr(&r2, buffer));
 
     r = add(&t, FRACTION, &f, FRACTION);
     r2 = add(&t, FRACTION, &x, INT);
-    printf("\nTest addition:\na + 2/3 = %s\na + 6 =", repr(&r, buffer));
+    printf("\nTest addition:\nt + 2/3 = %s\nt + 6 =", repr(&r, buffer));
     printf(" %s\n", repr(&r2, buffer));
 
     r = sub(&t, FRACTION, &f, FRACTION);
     r2 = sub(&t, FRACTION, &x, INT);
-    printf("\nTest subtraction:\na - 2/3 = %s\na - 6 =", repr(&r, buffer));
+    printf("\nTest subtraction:\nt - 2/3 = %s\nt - 6 =", repr(&r, buffer));
     printf(" %s\n", repr(&r2, buffer));
+
+    printf("\nTest r-methods (which dont exist)\n");
+    r = mul(&x, INT, &t, FRACTION);
+    r2 = div(&x, INT, &t, FRACTION);
+    Fraction r3 = add(&x, INT, &t, FRACTION);
+    Fraction r4 = sub(&x, INT, &t, FRACTION);
+
+    printf("6 * t = %s\n", repr(&r, buffer));
+    printf("6 / t = %s\n", repr(&r2, buffer));
+    printf("6 + t = %s\n", repr(&r3, buffer));
+    printf("6 - t = %s", repr(&r4, buffer));
 }

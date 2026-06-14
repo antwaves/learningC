@@ -1,0 +1,15 @@
+- binary
+- bit-animate
+- cipher
+- data-vis
+- dog-years
+- duration
+- football
+- inheritance
+- keychain
+- life
+- orbit
+- polars
+- relay/mandelbrot
+- typewriter
+- wordo-guesser
