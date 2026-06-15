@@ -1,9 +1,9 @@
 #define n 624
 #define m 397
-#define w 32
+#define _w 32
 #define r 31
 #define UMASK (0xffffffffUL << r)
-#define LMASK (0xffffffffUL >> (w-r))
+#define LMASK (0xffffffffUL >> (_w-r))
 #define u 11
 #define s 7
 #define t 15
