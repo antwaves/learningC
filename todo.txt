@@ -3,7 +3,6 @@
 - cipher
 - data-vis
 - dog-years
-- duration
 - football
 - inheritance
 - keychain
