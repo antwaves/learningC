@@ -3,9 +3,7 @@
 - cipher
 - data-vis
 - dog-years
-- football
-- inheritance
-- keychain
+- football (current)
 - life
 - orbit
 - polars

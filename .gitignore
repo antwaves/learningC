@@ -4,3 +4,4 @@ bird.png
 stb_image.h
 stb_image_write.h
 *.png
+*.csv
