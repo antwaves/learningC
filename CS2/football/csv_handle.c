@@ -3,6 +3,7 @@
 #include <corecrt.h>
 #include <stdbool.h>
 
+#include <windows.h>
 #include "../../dict/src/hash_table.c"
 #include "../../string/replace.c"
 
@@ -10,8 +11,7 @@
 int count_tokens(char* string, const char delimiter, const char encloser);
 char** split_count(char* string, int tokens, const char delimiter, const char encloser);
 char* string_tokenize(char* string, char** context, const char delimiter, const char encloser);
-int count_to(char* p, const char delimiter);
-char* move_to(char* p, const char delimiter);
+char* move_to(char* p, const char delimiter, const char encloser);
 
 
 ht_hash_table** csv_to_dict_list(char* filename);
@@ -28,7 +28,9 @@ int main() {
     int a = count_tokens(test, ',', '\"');
     int b = count_tokens(test_2, ',', '\"');
 
-    char** c = split_count(test, a, ',', '\"');
+    char** c = split_count(test_2, a, ',', '\"');
+
+    printf("%s %s %s", c[0], c[1], c[2]);
 
     // ht_hash_table** rows = csv_to_dict_list("test_2.csv");
 
@@ -174,13 +176,12 @@ char** split_count(char* string, int tokens, const char delimiter, const char en
         char* context = NULL;
         char* token = string_tokenize(n_str, &context, delimiter, encloser);
 
-        printf("%s", token);
-
-        while (token)
-        {
+        while (token != NULL) {
             *(result + index++) = _strdup(token);
+            if (context == NULL) { break; }
             token = string_tokenize(NULL, &context, delimiter, encloser);
         }
+
     }
 
     free(n_str);
@@ -191,25 +192,23 @@ char** split_count(char* string, int tokens, const char delimiter, const char en
 
 char* string_tokenize(char* string, char** context,  const char delimiter, const char encloser) {
     char* token = NULL;
-
+    
     if (string == NULL) {
         string = *context;
     }
-
-    string += count_to(string, delimiter);    
-    if (*string == '\0') {
+    else {
         *context = string;
-        return NULL;
     }
 
-
-    token = string;
-    string = move_to(string, delimiter);
+    
+    char* temp = string;
+    string = move_to(string, delimiter, encloser);
     if (string == NULL) {
-        char e = '\0';
-        *context = &e;
+        token = temp;
+        *context = NULL;
     }
     else {
+        token = temp;
         *string = '\0';
         *context = (string + 1);
     }
@@ -218,21 +217,11 @@ char* string_tokenize(char* string, char** context,  const char delimiter, const
 }
 
 
-int count_to(char* p, const char delimiter) {
-    int r = 0;
-    char* t = p;
+char* move_to(char* p, const char delimiter, const char encloser) { // move from p to delimiter, or null terminator
+    bool enclosed = false;
     
-    while (*t != '\0' && *t != delimiter) {
-        t++;
-        r++;
-    }
-    
-    return r;
-}
-
-
-char* move_to(char* p, const char delimiter) { // move from p to delimiter, or null terminator
     while (*p != delimiter) {
+
         if (*p == '\0') {
             p = NULL;
             return p;
