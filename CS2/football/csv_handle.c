@@ -9,6 +9,9 @@
 
 int count_tokens(char* string, const char delimiter, const char encloser);
 char** split_count(char* string, int tokens, const char delimiter, const char encloser);
+char* string_tokenize(char* string, char** context, const char delimiter, const char encloser);
+int count_to(char* p, const char delimiter);
+char* move_to(char* p, const char delimiter);
 
 
 ht_hash_table** csv_to_dict_list(char* filename);
@@ -25,7 +28,7 @@ int main() {
     int a = count_tokens(test, ',', '\"');
     int b = count_tokens(test_2, ',', '\"');
 
-    printf("%d %d", a, b);
+    char** c = split_count(test, a, ',', '\"');
 
     // ht_hash_table** rows = csv_to_dict_list("test_2.csv");
 
@@ -128,9 +131,6 @@ int main() {
 
 
 int count_tokens(char* string, const char delimiter, const char encloser) {
-    // counts the number of tokens in a string based on a given delimiter
-    // the encloser specifies "when the delimiter is in this encloser, interpret it literally"
-    
     char* current_character = NULL;
     bool enclosed = false;
     bool was_last_delimiter = false;
@@ -157,9 +157,6 @@ int count_tokens(char* string, const char delimiter, const char encloser) {
 
 
 char** split_count(char* string, int tokens, const char delimiter, const char encloser) { 
-    // splits a string based on a delimiter
-    // the encloser specifies "when the delimiter is in this encloser, interpret it literally"
-
     char** result = NULL;
     int size_of_str = strlen(string) + 1; // add for null terminator (same for to_allocate)
     int to_allocate = tokens + 1;
@@ -175,16 +172,73 @@ char** split_count(char* string, int tokens, const char delimiter, const char en
 
         char* current_token;
         char* context = NULL;
-        char* token = strtok_s(n_str, delim, &context);
+        char* token = string_tokenize(n_str, &context, delimiter, encloser);
+
+        printf("%s", token);
 
         while (token)
         {
             *(result + index++) = _strdup(token);
-            token = strtok_s(NULL, delim, &context);
+            token = string_tokenize(NULL, &context, delimiter, encloser);
         }
     }
 
     free(n_str);
     *(result + index) = NULL;
     return result;
+}
+
+
+char* string_tokenize(char* string, char** context,  const char delimiter, const char encloser) {
+    char* token = NULL;
+
+    if (string == NULL) {
+        string = *context;
+    }
+
+    string += count_to(string, delimiter);    
+    if (*string == '\0') {
+        *context = string;
+        return NULL;
+    }
+
+
+    token = string;
+    string = move_to(string, delimiter);
+    if (string == NULL) {
+        char e = '\0';
+        *context = &e;
+    }
+    else {
+        *string = '\0';
+        *context = (string + 1);
+    }
+    
+    return token;
+}
+
+
+int count_to(char* p, const char delimiter) {
+    int r = 0;
+    char* t = p;
+    
+    while (*t != '\0' && *t != delimiter) {
+        t++;
+        r++;
+    }
+    
+    return r;
+}
+
+
+char* move_to(char* p, const char delimiter) { // move from p to delimiter, or null terminator
+    while (*p != delimiter) {
+        if (*p == '\0') {
+            p = NULL;
+            return p;
+        }
+        p++;
+    }
+    
+    return p;
 }
