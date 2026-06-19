@@ -2,9 +2,10 @@
 #include <stdlib.h>
 #include <corecrt.h>
 #include <stdbool.h>
+#include <string.h>
 
-#include "../../dict/src/hash_table.c"
-#include "../../string/replace.c"
+#include "csv_handle.h"
+#include "../string/replace.c"
 
 
 int count_tokens(char* string, const char delimiter, const char encloser);
@@ -13,10 +14,8 @@ char* string_tokenize(char* string, char** context, const char delimiter, const 
 char* move_to(char* p, const char delimiter, const char encloser);
 void parse_record(char* record, const char encloser);
 
-ht_hash_table** csv_to_dict_list(char* filename);
 FILE* open_file(char* filename);
 int count_lines(FILE* fp);
-void del_csv_list(ht_hash_table** rows);
 
 
 ht_hash_table** csv_to_dict_list(char* filename) {
