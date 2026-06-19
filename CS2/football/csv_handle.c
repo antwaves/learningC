@@ -3,7 +3,6 @@
 #include <corecrt.h>
 #include <stdbool.h>
 
-#include <windows.h>
 #include "../../dict/src/hash_table.c"
 #include "../../string/replace.c"
 
@@ -12,23 +11,12 @@ int count_tokens(char* string, const char delimiter, const char encloser);
 char** split_row(char* string, int tokens, const char delimiter, const char encloser);
 char* string_tokenize(char* string, char** context, const char delimiter, const char encloser);
 char* move_to(char* p, const char delimiter, const char encloser);
-void parse_record(char* record);
+void parse_record(char* record, const char encloser);
 
 ht_hash_table** csv_to_dict_list(char* filename);
 FILE* open_file(char* filename);
 int count_lines(FILE* fp);
 void del_csv_list(ht_hash_table** rows);
-
-
-int main() {
-    ht_hash_table** rows = csv_to_dict_list("test_2.csv");
-
-    for (int i = 0; i < 3; i++) {
-        printf("%s", ht_search(rows[i], "param2"));
-    }
-    del_csv_list(rows);
-}
-
 
 
 ht_hash_table** csv_to_dict_list(char* filename) {
@@ -37,7 +25,7 @@ ht_hash_table** csv_to_dict_list(char* filename) {
         return NULL;
     }
 
-    char buffer[1024] = {'\0'};
+    char buffer[2048] = {'\0'};
     char** columns;
     int num_columns = 0;
     int to_allocate = count_lines(file);
@@ -48,14 +36,24 @@ ht_hash_table** csv_to_dict_list(char* filename) {
     }
     
     if (fgets(buffer, sizeof(buffer) / sizeof(char), file) != NULL) {
-        replace(buffer, '\n', '\0');
+        replace(buffer, '\n', '\0'); // if there's a newline in the header, fuck you.
         num_columns = count_tokens(buffer, ',', '\"');
         columns = split_row(buffer, num_columns, ',', '\"');
     }   
 
     int index = 0;
     while (fgets(buffer, sizeof(buffer) / sizeof(char), file) != NULL) {
-        replace(buffer, '\n', '\0');
+        while (count_tokens(buffer, ',', '\"') < num_columns) {
+            char* temp = buffer;
+            while (*temp != '\0') {
+                temp++;
+            }
+
+            if (fgets(temp, 2048 - (strlen(buffer) * sizeof(char)), file) == NULL){
+                break;
+            }
+        }
+
         int num_values = count_tokens(buffer, ',', '\"');
         char** row_values = split_row(buffer, num_values, ',', '\"');
 
@@ -66,7 +64,7 @@ ht_hash_table** csv_to_dict_list(char* filename) {
 
         ht_hash_table* row = result[index];
         for (int i = 0; i < num_columns; i++) {
-            parse_record(row_values[i]);
+            parse_record(row_values[i], '\"');
             ht_insert(row, columns[i], row_values[i]);
         }
 
@@ -226,13 +224,15 @@ char* move_to(char* p, const char delimiter, const char encloser) { // move from
 }
 
 
-void parse_record(char* record) {
+void parse_record(char* record, const char encloser) {
+    bool enclosed = false;
     bool last_was_quote = false;
     int index = 0;
 
     for (char* p = record; *p != '\0'; p++) {
+        enclosed = ((*p == encloser) ^ enclosed); 
         if (*p == '\"') {
-            if (last_was_quote) {
+            if (last_was_quote && enclosed) {
                 record[index++] = *p;
                 last_was_quote = false;
             }
