@@ -12,7 +12,7 @@ int count_tokens(char* string, const char delimiter, const char encloser);
 char** split_count(char* string, int tokens, const char delimiter, const char encloser);
 char* string_tokenize(char* string, char** context, const char delimiter, const char encloser);
 char* move_to(char* p, const char delimiter, const char encloser);
-
+char* parse_record(char* record, char* buffer);
 
 ht_hash_table** csv_to_dict_list(char* filename);
 FILE* open_file(char* filename);
@@ -22,15 +22,21 @@ void del_csv_list(ht_hash_table** rows);
 
 int main() {
     char* test = "param1,param2,params\n";
-    char* test_2 = "3,\"lovers, right?\",5";
-
+    char* test_2 = "3,\"\"\"lovers\"\", right?\",5";
 
     int a = count_tokens(test, ',', '\"');
     int b = count_tokens(test_2, ',', '\"');
 
-    char** c = split_count(test_2, a, ',', '\"');
-
+    char** c = split_count(test, a, ',', '\"');
+    char** c2= split_count(test_2, a, ',', '\"');
+    
+    char buffer[128];
+    parse_record(c2[1], buffer);
+    
+    printf("%s", buffer);
     printf("%s %s %s", c[0], c[1], c[2]);
+    printf("%s %s %s", c2[0], c2[1], c2[2]);
+
 
     // ht_hash_table** rows = csv_to_dict_list("test_2.csv");
 
@@ -217,17 +223,46 @@ char* string_tokenize(char* string, char** context,  const char delimiter, const
 }
 
 
-char* move_to(char* p, const char delimiter, const char encloser) { // move from p to delimiter, or null terminator
+char* move_to(char* p, const char delimiter, const char encloser) { // move from p to delimiter, or null terminator    
     bool enclosed = false;
-    
-    while (*p != delimiter) {
+    while (*p != '\0') {
+        enclosed = ((*p == encloser) ^ enclosed);
 
-        if (*p == '\0') {
-            p = NULL;
+        if (*p == delimiter && !enclosed) {
             return p;
         }
         p++;
     }
-    
+
+    p = NULL;
     return p;
+}
+
+
+char* parse_record(char* record, char* buffer) {
+    bool last_was_quote = false;
+    
+    int index = 0;
+    for (char* p = record; *p != '\0'; p++) {
+        if (*p == '\"') {
+            if (last_was_quote) {
+                buffer[index++] = *p;
+                last_was_quote = false;
+                printf("path 1\n");
+            }
+            else {
+                last_was_quote = true;
+                printf("path 2\n");
+            }
+
+            continue;
+        }
+
+        last_was_quote = false;
+        buffer[index++] = *p;
+        printf("path 3\n");
+    }
+
+    buffer[index] = '\0';
+    return buffer;
 }
