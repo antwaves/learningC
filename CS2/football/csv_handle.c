@@ -9,10 +9,10 @@
 
 
 int count_tokens(char* string, const char delimiter, const char encloser);
-char** split_count(char* string, int tokens, const char delimiter, const char encloser);
+char** split_row(char* string, int tokens, const char delimiter, const char encloser);
 char* string_tokenize(char* string, char** context, const char delimiter, const char encloser);
 char* move_to(char* p, const char delimiter, const char encloser);
-char* parse_record(char* record, char* buffer);
+void parse_record(char* record);
 
 ht_hash_table** csv_to_dict_list(char* filename);
 FILE* open_file(char* filename);
@@ -21,120 +21,107 @@ void del_csv_list(ht_hash_table** rows);
 
 
 int main() {
-    char* test = "param1,param2,params\n";
-    char* test_2 = "3,\"\"\"lovers\"\", right?\",5";
+    ht_hash_table** rows = csv_to_dict_list("test_2.csv");
 
-    int a = count_tokens(test, ',', '\"');
-    int b = count_tokens(test_2, ',', '\"');
-
-    char** c = split_count(test, a, ',', '\"');
-    char** c2= split_count(test_2, a, ',', '\"');
-    
-    char buffer[128];
-    parse_record(c2[1], buffer);
-    
-    printf("%s", buffer);
-    printf("%s %s %s", c[0], c[1], c[2]);
-    printf("%s %s %s", c2[0], c2[1], c2[2]);
-
-
-    // ht_hash_table** rows = csv_to_dict_list("test_2.csv");
-
-    // del_csv_list(rows);
+    for (int i = 0; i < 3; i++) {
+        printf("%s", ht_search(rows[i], "param2"));
+    }
+    del_csv_list(rows);
 }
 
 
 
-// ht_hash_table** csv_to_dict_list(char* filename) {
-//     FILE* file = open_file(filename);
-//     if (file == NULL) {
-//         return NULL;
-//     }
+ht_hash_table** csv_to_dict_list(char* filename) {
+    FILE* file = open_file(filename);
+    if (file == NULL) {
+        return NULL;
+    }
 
-//     char buffer[1024] = {'\0'};
-//     char** columns;
-//     int num_columns = 0;
-//     int to_allocate = count_lines(file);
-//     ht_hash_table** result = malloc(sizeof(ht_hash_table*) * (to_allocate));
+    char buffer[1024] = {'\0'};
+    char** columns;
+    int num_columns = 0;
+    int to_allocate = count_lines(file);
+    ht_hash_table** result = malloc(sizeof(ht_hash_table*) * (to_allocate));
 
-//     for (int i = 0; i < to_allocate; i++) {
-//         result[i] = ht_new();
-//     }
+    for (int i = 0; i < to_allocate; i++) {
+        result[i] = ht_new();
+    }
     
-//     if (fgets(buffer, sizeof(buffer) / sizeof(char), file) != NULL) {
-//         replace(buffer, '\n', '\0');
-//         num_columns = count_tokens(buffer, ',');
-//         columns = split_count(buffer, num_columns, ',');
-//     }   
+    if (fgets(buffer, sizeof(buffer) / sizeof(char), file) != NULL) {
+        replace(buffer, '\n', '\0');
+        num_columns = count_tokens(buffer, ',', '\"');
+        columns = split_row(buffer, num_columns, ',', '\"');
+    }   
 
-//     int index = 0;
-//     while (fgets(buffer, sizeof(buffer) / sizeof(char), file) != NULL) {
-//         replace(buffer, '\n', '\0');
-//         int num_values = count_tokens(buffer, ',');
-//         char** row_values = split_count(buffer, num_values, ',');
+    int index = 0;
+    while (fgets(buffer, sizeof(buffer) / sizeof(char), file) != NULL) {
+        replace(buffer, '\n', '\0');
+        int num_values = count_tokens(buffer, ',', '\"');
+        char** row_values = split_row(buffer, num_values, ',', '\"');
 
-//         if (num_columns != num_values) {
-//             printf("Error: Badly formatted file");
-//             return NULL;
-//         }
+        if (num_columns != num_values) {
+            printf("Error: Badly formatted file");
+            return NULL;
+        }
 
-//         ht_hash_table* row = result[index];
-//         for (int i = 0; i < num_columns; i++) {
-//             ht_insert(row, columns[i], row_values[i]);
-//         }
-
-
-//         result[index++] = row;
-//         free(row_values);
-//     }
+        ht_hash_table* row = result[index];
+        for (int i = 0; i < num_columns; i++) {
+            parse_record(row_values[i]);
+            ht_insert(row, columns[i], row_values[i]);
+        }
 
 
-//     result[index] = NULL;
-//     fclose(file);
-//     free(columns);
-//     return result;
-// }
+        result[index++] = row;
+        free(row_values);
+    }
 
 
-// FILE* open_file(char* filename) {
-//     FILE* file;
-//     errno_t err = fopen_s(&file, filename, "r"); 
-
-//     char error_buffer[128];
-//     if (file == NULL) {
-//         strerror_s(error_buffer, sizeof(error_buffer), err);
-//         printf("Error: %s\n", error_buffer);
-//         return NULL;
-//     }
-
-//     return file;
-// }
+    result[index] = NULL;
+    fclose(file);
+    free(columns);
+    return result;
+}
 
 
-// void del_csv_list(ht_hash_table** rows) {
-//     ht_hash_table** p = rows;
-//     while(*p != NULL) {
-//         ht_del_hash_table(*p);
-//         p++;
-//     }
+FILE* open_file(char* filename) {
+    FILE* file;
+    errno_t err = fopen_s(&file, filename, "r"); 
+
+    char error_buffer[128];
+    if (file == NULL) {
+        strerror_s(error_buffer, sizeof(error_buffer), err);
+        printf("Error: %s\n", error_buffer);
+        return NULL;
+    }
+
+    return file;
+}
+
+
+void del_csv_list(ht_hash_table** rows) {
+    ht_hash_table** p = rows;
+    while(*p != NULL) {
+        ht_del_hash_table(*p);
+        p++;
+    }
     
-//     free(rows);
-// }
+    free(rows);
+}
 
 
-// int count_lines(FILE* fp) {
-//     int to_allocate = 1;
-//     char ch = '\0';
+int count_lines(FILE* fp) {
+    int to_allocate = 1;
+    char ch = '\0';
 
-//     while(!feof(fp)) {
-//         ch = fgetc(fp);
-//         if(ch == '\n') {
-//             to_allocate++;
-//         }
-//     }
-//     fseek(fp, 0, SEEK_SET);
-//     return to_allocate;
-// }
+    while(!feof(fp)) {
+        ch = fgetc(fp);
+        if(ch == '\n') {
+            to_allocate++;
+        }
+    }
+    fseek(fp, 0, SEEK_SET);
+    return to_allocate;
+}
 
 
 
@@ -164,7 +151,7 @@ int count_tokens(char* string, const char delimiter, const char encloser) {
 }
 
 
-char** split_count(char* string, int tokens, const char delimiter, const char encloser) { 
+char** split_row(char* string, int tokens, const char delimiter, const char encloser) { 
     char** result = NULL;
     int size_of_str = strlen(string) + 1; // add for null terminator (same for to_allocate)
     int to_allocate = tokens + 1;
@@ -239,30 +226,25 @@ char* move_to(char* p, const char delimiter, const char encloser) { // move from
 }
 
 
-char* parse_record(char* record, char* buffer) {
+void parse_record(char* record) {
     bool last_was_quote = false;
-    
     int index = 0;
+
     for (char* p = record; *p != '\0'; p++) {
         if (*p == '\"') {
             if (last_was_quote) {
-                buffer[index++] = *p;
+                record[index++] = *p;
                 last_was_quote = false;
-                printf("path 1\n");
             }
             else {
                 last_was_quote = true;
-                printf("path 2\n");
             }
-
             continue;
         }
 
         last_was_quote = false;
-        buffer[index++] = *p;
-        printf("path 3\n");
+        record[index++] = *p;
     }
 
-    buffer[index] = '\0';
-    return buffer;
+    record[index] = '\0';
 }
