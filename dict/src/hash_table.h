@@ -10,6 +10,7 @@ typedef struct {
     ht_item** items;
 } ht_hash_table;
 
+static ht_item HT_DELETED_ITEM;
 
 ht_hash_table* ht_new();
 void ht_del_hash_table(ht_hash_table* ht);
