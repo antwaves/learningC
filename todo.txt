@@ -1,11 +1,9 @@
-- binary
+- binary (current)
 - bit-animate
 - cipher
 - data-vis
 - dog-years
 - life
 - orbit
-- polars (current)
 - relay/mandelbrot
-- typewriter
 - wordo-guesser
