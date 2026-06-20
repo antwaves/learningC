@@ -3,10 +3,9 @@
 - cipher
 - data-vis
 - dog-years
-- football (current)
 - life
 - orbit
-- polars
+- polars (current)
 - relay/mandelbrot
 - typewriter
 - wordo-guesser

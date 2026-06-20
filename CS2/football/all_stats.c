@@ -21,6 +21,11 @@ void update_team_stats(ht_hash_table* row, stats** stats_list, int h_index, int 
 void handle_base(stats* s, int own_score, int other_score);
 void handle_tie(stats* s, int own_score, int other_score);
 
+char* repr(stats* s, char* buffer, int size);
+double win_percentage(stats* s);
+double scored_per_game(stats* s);
+double allowed_per_game(stats* s);
+
 
 int main() {
     ht_hash_table** games = csv_to_dict_list("games.csv");
@@ -45,9 +50,10 @@ int main() {
         p++;
     }
 
+    char buffer[2048];
     for (int i = 0; i < size; i++) {
-        printf("%s ", teams[i]);
-        printf("%d\n", stats_list[i]->wins);
+        printf("%s\n", teams[i]);
+        printf("%s", repr(stats_list[i], buffer, sizeof(buffer)));
     }
 
     free(teams);
@@ -55,18 +61,6 @@ int main() {
         free(stats_list[i]);
     }
     free(stats_list);
-}
-
-
-int find_in(char** list, int size, char* item){
-    for (int i = 0; i < size; i++) {
-        if (strcmp(list[i], item) == 0) {
-            return i;
-        }
-    }
-    
-    list[size] = item;
-    return size;
 }
 
 
@@ -82,6 +76,18 @@ int add_team_record(char** teams, int* size, stats** stats_list, char* team) {
         }
     }
     return index;
+}
+
+
+int find_in(char** list, int size, char* item){
+    for (int i = 0; i < size; i++) {
+        if (strcmp(list[i], item) == 0) {
+            return i;
+        }
+    }
+    
+    list[size] = item;
+    return size;
 }
 
 
@@ -134,4 +140,26 @@ void handle_base(stats* s, int own_score, int other_score) {
     s->points_scored += own_score;
     s->points_allowed += other_score;
     s->num_games += 1;
+}
+
+
+char* repr(stats* s, char* buffer, int size) {
+
+    snprintf(buffer, size, "number of games: %d\nwins: %d\nlosses: %d\nties: %d\nwin percent: %.3f\npoints scored: %d\npoints allowed: %d\npoints scored per game: %.3f\npoints allowed per game %.3f\n\n\n", s->num_games, s->wins, s->losses, s->ties, win_percentage(s), s->points_scored, s->points_allowed, scored_per_game(s), allowed_per_game(s));
+    return buffer;
+}
+
+
+double win_percentage(stats* s) {
+    return s-> wins / (double)s->num_games;
+}
+
+
+double scored_per_game(stats* s) {
+    return s-> points_scored / (double)s->num_games;
+}
+
+
+double allowed_per_game(stats* s) {
+    return s-> points_allowed / (double)s->num_games;
 }
