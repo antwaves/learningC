@@ -1,8 +1,7 @@
-- bit-animate (current)
+- bit-animate
 - cipher
-- data-vis
 - dog-years
-- life
+- life (current)
 - orbit
 - relay/mandelbrot
 - wordo-guesser
