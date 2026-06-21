@@ -1,5 +1,4 @@
-- binary (current)
-- bit-animate
+- bit-animate (current)
 - cipher
 - data-vis
 - dog-years
