@@ -1,6 +1,3 @@
-- bit-animate
-- cipher (current)
-- dog-years
+- bit-animate (current)
 - orbit
-- relay/mandelbrot
 - wordo-guesser
