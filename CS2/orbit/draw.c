@@ -27,10 +27,13 @@ void _clean_up(struct App* self);
 void _create_instance(struct App* self);
 void _get_required_instance_extensions(struct App* self);
 void _setup_debug_messenger(struct App* self);
+void _pick_physical_device(struct App* self);
 void run(struct App* self);
 
 void check_extensions(const char** glfw_extensions, int glfw_extension_count, bool log);
 void check_validation_layers();
+
+#define LOAD_INSTANCE_EXT(instance, func_name) PFN_##func_name func_name = (PFN_##func_name)vkGetInstanceProcAddr(instance, #func_name); 
 
 struct extension_info {
     uint32_t extension_count;
@@ -48,6 +51,7 @@ struct App {
     GLFWwindow* window;
     VkInstance instance;
     VkDebugUtilsMessengerEXT debug_messenger;
+    VkPhysicalDevice physical_device;
 };
 
 
@@ -81,6 +85,7 @@ void _init_window(struct App* self) {
 void _init_vulkan(struct App* self) {
     _create_instance(self);
     _setup_debug_messenger(self);
+    _pick_physical_device(self);
 }
 
 
@@ -92,6 +97,11 @@ void _main_loop(struct App* self) {
 
 
 void _clean_up(struct App* self) {
+    LOAD_INSTANCE_EXT(self->instance, vkDestroyDebugUtilsMessengerEXT)
+    if (vkDestroyDebugUtilsMessengerEXT != NULL) {
+        vkDestroyDebugUtilsMessengerEXT(self->instance, self->debug_messenger, NULL);
+    }
+
     vkDestroyInstance(self->instance, NULL);
     glfwDestroyWindow(self->window);
     glfwTerminate();
@@ -105,7 +115,7 @@ void _create_instance(struct App* self) {
     VkApplicationInfo app_info = {0};
     app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
     app_info.pApplicationName = "Hello Triangle";
-    app_info.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
+    app_info.applicationVersion = VK_MAKE_VERSION(1, 0, 1);
     app_info.pEngineName = "No Engine";
     app_info.engineVersion = VK_MAKE_VERSION(1, 0, 0);
     app_info.apiVersion = VK_API_VERSION_1_4;;
@@ -132,24 +142,24 @@ void _create_instance(struct App* self) {
 
 void _get_required_instance_extensions(struct App* self) {
     uint32_t glfw_extension_count = 0;
-    const char** glfw_extensions;
-    glfw_extensions = glfwGetRequiredInstanceExtensions(&glfw_extension_count);
+    const char** glfw_extensions = glfwGetRequiredInstanceExtensions(&glfw_extension_count);
 
-    if (!enable_validation_layers) {
-        self->extensions.extension_count = glfw_extension_count;        
-        self->extensions.extension_names = glfw_extensions;
+    uint32_t total_extension_count = glfw_extension_count + 1; 
+    if (enable_validation_layers) {
+        total_extension_count += 1;
     }
-    else {
-        const char** all_extensions = calloc(1, sizeof(char*) * (glfw_extension_count + 1));
-        for (int i = 0; i < glfw_extension_count; i++) {
-            all_extensions[i] = glfw_extensions[i];
-        }
-        const char* validation = _strdup(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-        all_extensions[glfw_extension_count] = validation;
 
-        self->extensions.extension_names = all_extensions;
-        self->extensions.extension_count = glfw_extension_count + 1;
+    const char** extensions = calloc(total_extension_count, sizeof(char*));
+    for (uint32_t i = 0; i < glfw_extension_count; i++) {
+        extensions[i] = glfw_extensions[i];
     }
+    extensions[glfw_extension_count] = VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME;
+    if (enable_validation_layers) {
+        extensions[glfw_extension_count + 1] = VK_EXT_DEBUG_UTILS_EXTENSION_NAME;
+    }
+
+    self->extensions.extension_count = total_extension_count;
+    self->extensions.extension_names = extensions;
 }
 
 
@@ -169,7 +179,7 @@ void check_extensions(const char** glfw_extensions, int glfw_extension_count, bo
     }
 
     if (log) {
-        printf("\n%d extensions needed for GLFW%s: \n", glfw_extension_count, enable_validation_layers ? " and validation layers" : "");
+        printf("\n%d extensions needed for GLFW, physical devices%s: \n", glfw_extension_count, enable_validation_layers ? " and validation layers" : "");
     }
     bool missing_any = false;
     for (int i = 0; i < glfw_extension_count; i++) {
@@ -226,12 +236,10 @@ void check_validation_layers() {
 void _setup_debug_messenger(struct App* self) {
     if (!enable_validation_layers) return;
 
-    // get adress of create debug utils
-    PFN_vkCreateDebugUtilsMessengerEXT pfnVkCreateDebugUtilsMessengerEXT = NULL;
-    pfnVkCreateDebugUtilsMessengerEXT = (PFN_vkCreateDebugUtilsMessengerEXT) // cast
-        vkGetInstanceProcAddr(self->instance, "vkCreateDebugUtilsMessengerEXT");
+    PFN_vkCreateDebugUtilsMessengerEXT pfnVkCeateDebugUtilsMessengerEXT = NULL;
+    LOAD_INSTANCE_EXT(self->instance, vkCreateDebugUtilsMessengerEXT);
 
-    if (pfnVkCreateDebugUtilsMessengerEXT == NULL) {
+    if (vkCreateDebugUtilsMessengerEXT == NULL) {
         fprintf(stderr, "Missing validation layers.\n");
         exit(EXIT_FAILURE);
     }
@@ -250,8 +258,7 @@ void _setup_debug_messenger(struct App* self) {
     debug_utils_messenger_create_info_ext.messageType = message_type_flags;
     debug_utils_messenger_create_info_ext.pfnUserCallback = &debug_callback;
 
-    VkResult result = pfnVkCreateDebugUtilsMessengerEXT(self->instance, &debug_utils_messenger_create_info_ext, \
-                                   NULL, &self->debug_messenger);
+    VkResult result = vkCreateDebugUtilsMessengerEXT(self->instance, &debug_utils_messenger_create_info_ext, NULL, &self->debug_messenger);
     if (result != VK_SUCCESS) {
         printf("Error: %d", VK_SUCCESS);
         exit(EXIT_FAILURE);
@@ -259,8 +266,42 @@ void _setup_debug_messenger(struct App* self) {
 }
 
 
+void _pick_physical_device(struct App* self) {
+    uint32_t device_count = 0;
+    vkEnumeratePhysicalDevices(self->instance, &device_count, NULL);
+
+    if (device_count == 0) {
+        fprintf(stderr, "Failed to find GPU's with vulkan support");
+        exit(EXIT_FAILURE);
+    }
+
+    VkPhysicalDevice* devices = calloc(1, sizeof(VkPhysicalDevice) * device_count);
+    vkEnumeratePhysicalDevices(self->instance, &device_count, devices);
+
+    for (int i = 0; i < device_count; i++) {
+        VkPhysicalDevice physical_device = devices[i];
+        VkPhysicalDeviceProperties2* p_properties = calloc(1, sizeof(VkPhysicalDeviceProperties2));
+        vkGetPhysicalDeviceProperties2(physical_device, p_properties);
+        VkPhysicalDeviceFeatures2* p_features = calloc(1, sizeof(VkPhysicalDeviceFeatures2));
+        vkGetPhysicalDeviceFeatures2(physical_device, p_features);
+
+        bool supports_vulkan1_3 = p_properties->properties.apiVersion >= VK_API_VERSION_1_3;
+
+        uint32_t count = 0;
+        VkQueueFamilyProperties2* queue_family_properties;
+        vkGetPhysicalDeviceQueueFamilyProperties2(physical_device, &count, queue_family_properties);
+        //bool supports_graphics = 
+
+        free(p_properties);
+        free(p_features);
+    }
+
+    free(devices);
+}
+
+
 struct App* init() {
-    struct App* a = malloc(sizeof(struct App));
+    struct App* a = calloc(1, sizeof(struct App));
     a->run = run;
     a->WIDTH = 800;
     a->HEIGHT = 600;
