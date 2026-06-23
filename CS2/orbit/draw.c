@@ -225,6 +225,17 @@ void check_validation_layers() {
 
 void _setup_debug_messenger(struct App* self) {
     if (!enable_validation_layers) return;
+
+    // get adress of create debug utils
+    PFN_vkCreateDebugUtilsMessengerEXT pfnVkCreateDebugUtilsMessengerEXT = NULL;
+    pfnVkCreateDebugUtilsMessengerEXT = (PFN_vkCreateDebugUtilsMessengerEXT) // cast
+        vkGetInstanceProcAddr(self->instance, "vkCreateDebugUtilsMessengerEXT");
+
+    if (pfnVkCreateDebugUtilsMessengerEXT == NULL) {
+        fprintf(stderr, "Missing validation layers.\n");
+        exit(EXIT_FAILURE);
+    }
+
     VkDebugUtilsMessageSeverityFlagsEXT severity_flags = VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | 
                                                          VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT; 
 
@@ -239,7 +250,12 @@ void _setup_debug_messenger(struct App* self) {
     debug_utils_messenger_create_info_ext.messageType = message_type_flags;
     debug_utils_messenger_create_info_ext.pfnUserCallback = &debug_callback;
 
-    self->debug_messenger = self->instance->vkCreateDebugUtilsMessengerEXT()
+    VkResult result = pfnVkCreateDebugUtilsMessengerEXT(self->instance, &debug_utils_messenger_create_info_ext, \
+                                   NULL, &self->debug_messenger);
+    if (result != VK_SUCCESS) {
+        printf("Error: %d", VK_SUCCESS);
+        exit(EXIT_FAILURE);
+    }
 }
 
 
