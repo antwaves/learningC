@@ -32,6 +32,7 @@ void run(struct App* self);
 
 void check_extensions(const char** glfw_extensions, int glfw_extension_count, bool log);
 void check_validation_layers();
+bool is_device_suitable(VkPhysicalDevice* device);
 
 #define LOAD_INSTANCE_EXT(instance, func_name) PFN_##func_name func_name = (PFN_##func_name)vkGetInstanceProcAddr(instance, #func_name); 
 
@@ -280,23 +281,65 @@ void _pick_physical_device(struct App* self) {
 
     for (int i = 0; i < device_count; i++) {
         VkPhysicalDevice physical_device = devices[i];
-        VkPhysicalDeviceProperties2* p_properties = calloc(1, sizeof(VkPhysicalDeviceProperties2));
-        vkGetPhysicalDeviceProperties2(physical_device, p_properties);
-        VkPhysicalDeviceFeatures2* p_features = calloc(1, sizeof(VkPhysicalDeviceFeatures2));
-        vkGetPhysicalDeviceFeatures2(physical_device, p_features);
+        if (is_device_suitable(&physical_device)) {
+            self->physical_device = physical_device;
+        }
+    }
 
-        bool supports_vulkan1_3 = p_properties->properties.apiVersion >= VK_API_VERSION_1_3;
-
-        uint32_t count = 0;
-        VkQueueFamilyProperties2* queue_family_properties;
-        vkGetPhysicalDeviceQueueFamilyProperties2(physical_device, &count, queue_family_properties);
-        //bool supports_graphics = 
-
-        free(p_properties);
-        free(p_features);
+    if (self->physical_device == NULL) {
+        fprintf(stderr, "Failed to find a suitable GPU");
+        exit(EXIT_FAILURE);
     }
 
     free(devices);
+}
+
+
+bool is_device_suitable(VkPhysicalDevice* device) {
+    bool is_suitable = true;
+
+    VkPhysicalDeviceProperties2* p_properties = calloc(1, sizeof(VkPhysicalDeviceProperties2));
+    vkGetPhysicalDeviceProperties2(*device, p_properties);
+    bool supports_vulkan1_3 = p_properties->properties.apiVersion >= VK_API_VERSION_1_3;
+
+    uint32_t count = 0;
+    bool supports_graphics = false;
+    vkGetPhysicalDeviceQueueFamilyProperties2(*device, &count, NULL);
+    VkQueueFamilyProperties2* queue_family_properties = calloc(1, count * sizeof(VkQueueFamilyProperties2));
+    vkGetPhysicalDeviceQueueFamilyProperties2(*device, &count, queue_family_properties);
+    for (int j = 0; j < count; j++) {
+        supports_graphics = supports_graphics || queue_family_properties[j].queueFamilyProperties.queueFlags & VK_QUEUE_GRAPHICS_BIT;
+    }
+
+    bool has_needed_extensions = true;
+    char *required_device_extensions[] = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+    uint32_t elms = sizeof(required_device_extensions) / sizeof(char*);
+    uint32_t available_ext_count = 0;
+    vkEnumerateDeviceExtensionProperties(*device, NULL, &available_ext_count, NULL);
+    VkExtensionProperties* available_device_extensions = calloc(1, sizeof(VkExtensionProperties) * available_ext_count);
+    vkEnumerateDeviceExtensionProperties(*device, NULL, &available_ext_count, available_device_extensions);
+    for (int i = 0; i < elms; i++) {
+        bool has_extension = false;
+        for (int j = 0; j < available_ext_count; j++) {
+            has_extension = has_extension || strcmp(available_device_extensions[j].extensionName, required_device_extensions[i]) == 0;
+        }
+        has_needed_extensions = has_needed_extensions && has_extension;
+    }
+
+    VkPhysicalDeviceExtendedDynamicStateFeaturesEXT dynamic_features = {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT, .pNext = NULL};
+    VkPhysicalDeviceVulkan11Features vulkan11_features = {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES, .pNext = &dynamic_features};
+    VkPhysicalDeviceVulkan13Features vulkan13_features = {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES, .pNext = &vulkan11_features};  
+    VkPhysicalDeviceFeatures2 p_features = {.sType=VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2, .pNext =&vulkan13_features};
+    vkGetPhysicalDeviceFeatures2(*device, &p_features);
+    bool has_needed_features = vulkan11_features.shaderDrawParameters && vulkan13_features.dynamicRendering && dynamic_features.extendedDynamicState;
+
+    is_suitable = supports_vulkan1_3 && supports_graphics && has_needed_extensions && has_needed_features;
+
+    free(p_properties);
+    free(queue_family_properties);
+    free(available_device_extensions);
+
+    return is_suitable;
 }
 
 
