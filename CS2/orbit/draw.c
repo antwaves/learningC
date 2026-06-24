@@ -30,6 +30,7 @@ void _setup_debug_messenger(struct App* self);
 void _create_surface(struct App* self);
 void _pick_physical_device(struct App* self);
 void _create_logical_device(struct App* self);
+void _create_swap_chain(struct App* self);
 void run(struct App* self);
 
 void check_extensions(const char** glfw_extensions, int glfw_extension_count, bool log);
@@ -56,7 +57,7 @@ struct App {
     VkSurfaceKHR surface;
     VkPhysicalDevice physical_device;
     VkDevice logical_device;
-    VkQueue graphics_queue;
+    VkQueue queue;
 };
 
 
@@ -118,26 +119,21 @@ void _clean_up(struct App* self) {
 void _create_instance(struct App* self) {
     check_validation_layers();
 
-    VkApplicationInfo app_info = {0};
-    app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-    app_info.pApplicationName = "Hello Triangle";
-    app_info.applicationVersion = VK_MAKE_VERSION(1, 0, 1);
-    app_info.pEngineName = "No Engine";
-    app_info.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-    app_info.apiVersion = VK_API_VERSION_1_4;;
+    VkApplicationInfo app_info = {.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO, 
+                                  .pApplicationName = "Hello Triangle",
+                                  .applicationVersion = VK_MAKE_VERSION(1, 0, 1), 
+                                  .pEngineName = "No Engine",
+                                  .engineVersion = VK_MAKE_VERSION(1, 0, 0), .apiVersion = VK_API_VERSION_1_4};
 
-    VkInstanceCreateInfo create_info = {0};
-    create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-    create_info.pApplicationInfo = &app_info;
-    
     _get_required_instance_extensions(self);
     struct extension_info extension_info = self->extensions;
     check_extensions(extension_info.extension_names, extension_info.extension_count, self->log);
-
-    create_info.enabledExtensionCount = extension_info.extension_count;
-    create_info.ppEnabledExtensionNames = extension_info.extension_names;
-    create_info.enabledLayerCount = 0;
-    create_info.ppEnabledLayerNames = NULL;
+    VkInstanceCreateInfo create_info = {.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO, 
+                                        .pApplicationInfo = &app_info,
+                                        .enabledExtensionCount = extension_info.extension_count, 
+                                        .ppEnabledExtensionNames = extension_info.extension_names,
+                                        .enabledLayerCount = 0, 
+                                        .ppEnabledLayerNames = NULL};
     
     if (vkCreateInstance(&create_info, NULL, &(self->instance)) != VK_SUCCESS) {
         perror("Error: ");
@@ -175,7 +171,6 @@ void check_extensions(const char** glfw_extensions, int glfw_extension_count, bo
 
     VkExtensionProperties* extensions = malloc(extension_count * sizeof(VkExtensionProperties));
     vkEnumerateInstanceExtensionProperties(NULL, &extension_count, extensions);
-
 
     if (log) {
         printf("%d extensions installed: \n", extension_count);
@@ -257,7 +252,6 @@ void _setup_debug_messenger(struct App* self) {
                                                          VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | 
                                                          VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT | 
                                                          VK_DEBUG_UTILS_MESSAGE_TYPE_DEVICE_ADDRESS_BINDING_BIT_EXT;
-
 
     VkDebugUtilsMessengerCreateInfoEXT debug_utils_messenger_create_info_ext = {0};
     debug_utils_messenger_create_info_ext.messageSeverity = severity_flags;
@@ -394,7 +388,26 @@ void _create_logical_device(struct App* self) {
                                              .enabledExtensionCount = ext_count, .ppEnabledExtensionNames = required_device_extensions};
     self->logical_device = malloc(sizeof(VkDevice));
     vkCreateDevice(self->physical_device, &device_create_info, NULL, &self->logical_device);
-    vkGetDeviceQueue(self->logical_device, queue_index, 0, &self->graphics_queue);
+    vkGetDeviceQueue(self->logical_device, queue_index, 0, &self->queue);
+}
+
+
+void _create_swap_chain(struct App* self) {
+    VkSurfaceCapabilitiesKHR* surface_capabilities = calloc(1, sizeof(VkSurfaceCapabilitiesKHR));
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(self->physical_device, self->surface, surface_capabilities);
+    uint32_t format_count = 0;
+    vkGetPhysicalDeviceSurfaceFormatsKHR(self->physical_device, self->surface, &format_count, NULL);
+    VkSurfaceFormatKHR* available_formats = calloc(format_count, sizeof(VkSurfaceFormatKHR));
+    vkGetPhysicalDeviceSurfaceFormatsKHR(self->physical_device, self->surface, &format_count, available_formats);
+    uint32_t mode_count = 0;
+    vkGetPhysicalDeviceSurfacePresentModesKHR(self->physical_device, self->surface, &mode_count, NULL);
+    VkPresentModeKHR* available_present_modes = calloc(mode_count, sizeof(VkPresentModeKHR));
+    vkGetPhysicalDeviceSurfacePresentModesKHR(self->physical_device, self->surface, &mode_count, available_present_modes);
+
+
+    free(available_formats);
+    free(surface_capabilities);
+    free(available_present_modes);
 }
 
 
