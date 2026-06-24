@@ -42,7 +42,6 @@ struct extension_info {
     const char** extension_names;
 };
 
-
 struct App {
     uint32_t WIDTH;
     uint32_t HEIGHT;
@@ -55,6 +54,7 @@ struct App {
     VkDebugUtilsMessengerEXT debug_messenger;
     VkPhysicalDevice physical_device;
     VkDevice logical_device;
+    VkQueue graphics_queue;
 };
 
 
@@ -106,6 +106,7 @@ void _clean_up(struct App* self) {
     }
 
     vkDestroyInstance(self->instance, NULL);
+    vkDestroyDevice(self->logical_device, NULL);
     glfwDestroyWindow(self->window);
     glfwTerminate();
     free(self->extensions.extension_names);
@@ -367,31 +368,13 @@ void _create_logical_device(struct App* self) {
     VkPhysicalDeviceVulkan13Features vulkan13_features = {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES, .pNext = &vulkan11_features};  
     VkPhysicalDeviceFeatures2 feature_chain = {.sType=VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2, .pNext =&vulkan13_features}; // this sucks
 
-    char *required_device_extensions[] = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
-
-}
-
-
-VkPhysicalDeviceFeatures2* get_required_device_features(){
-    VkPhysicalDeviceExtendedDynamicStateFeaturesEXT *dynamic_features = calloc(1, sizeof(VkPhysicalDeviceExtendedDynamicStateFeaturesEXT));
-    *dynamic_features = (VkPhysicalDeviceExtendedDynamicStateFeaturesEXT){.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT, .pNext = NULL};
-    VkPhysicalDeviceVulkan11Features* vulkan11_features = calloc(1, sizeof(VkPhysicalDeviceVulkan11Features));
-    *vulkan11_features = (VkPhysicalDeviceVulkan11Features){.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES, .pNext = &dynamic_features};
-    VkPhysicalDeviceVulkan13Features* vulkan13_features = calloc(1, sizeof(VkPhysicalDeviceVulkan13Features));
-    *vulkan13_features = (VkPhysicalDeviceVulkan13Features){.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES, .pNext = &vulkan11_features};  
-    VkPhysicalDeviceFeatures2* feature_chain = calloc(1, sizeof(VkPhysicalDeviceFeatures2));
-    *feature_chain = (VkPhysicalDeviceFeatures2){.sType=VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2, .pNext =&vulkan13_features};
-    return feature_chain;
-}
-
-
-void free_feature_chain(VkPhysicalDeviceFeatures2* feature_chain) {
-    void* last;
-    void* current = feature_chain;
-    while (current != NULL) {
-        last = current;
-        current = current->pNext;
-    }
+    const char *required_device_extensions[] = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+    uint32_t ext_count = sizeof(required_device_extensions) / sizeof(char*);
+    VkDeviceCreateInfo device_create_info = {.pNext = &feature_chain, .queueCreateInfoCount = 1, .pQueueCreateInfos = &device_queue_create_info, 
+                                             .enabledExtensionCount = ext_count, .ppEnabledExtensionNames = required_device_extensions};
+    self->logical_device = malloc(sizeof(VkDevice));
+    vkCreateDevice(self->physical_device, &device_create_info, NULL, &self->logical_device);
+    vkGetDeviceQueue(self->logical_device, graphics_index, 0, &self->graphics_queue);
 }
 
 
