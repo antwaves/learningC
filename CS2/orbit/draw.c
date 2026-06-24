@@ -27,6 +27,7 @@ void _clean_up(struct App* self);
 void _create_instance(struct App* self);
 void _get_required_instance_extensions(struct App* self);
 void _setup_debug_messenger(struct App* self);
+void _create_surface(struct App* self);
 void _pick_physical_device(struct App* self);
 void _create_logical_device(struct App* self);
 void run(struct App* self);
@@ -52,6 +53,7 @@ struct App {
     GLFWwindow* window;
     VkInstance instance;
     VkDebugUtilsMessengerEXT debug_messenger;
+    VkSurfaceKHR surface;
     VkPhysicalDevice physical_device;
     VkDevice logical_device;
     VkQueue graphics_queue;
@@ -270,6 +272,14 @@ void _setup_debug_messenger(struct App* self) {
 }
 
 
+void _create_surface(struct App* self) {
+    if (glfwCreateWindowSurface(self->instance, self->window, NULL, &self->surface) != 0) {
+        fprintf(stderr, "Failed to create window surface!");
+        exit(EXIT_FAILURE);
+    }
+}
+
+
 void _pick_physical_device(struct App* self) {
     uint32_t device_count = 0;
     vkEnumeratePhysicalDevices(self->instance, &device_count, NULL);
@@ -350,18 +360,28 @@ void _create_logical_device(struct App* self) {
     VkPhysicalDevice device = self->physical_device;
     uint32_t count = 0;
 
+    bool any_queues = false;
     vkGetPhysicalDeviceQueueFamilyProperties2(device, &count, NULL);
     VkQueueFamilyProperties2* queue_family_properties = calloc(1, count * sizeof(VkQueueFamilyProperties2));
     vkGetPhysicalDeviceQueueFamilyProperties2(device, &count, queue_family_properties);
-    uint32_t graphics_index = 0;
+    uint32_t queue_index = ~0;
     for (int i = 0; i < count; i++) {
-        if (queue_family_properties[i].queueFamilyProperties.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
-            graphics_index = i; 
+        bool graphics_supported = queue_family_properties[i].queueFamilyProperties.queueFlags & VK_QUEUE_GRAPHICS_BIT;
+        VkBool32 surface_supported;
+        vkGetPhysicalDeviceSurfaceSupportKHR(self->physical_device, i, self->surface, &surface_supported);
+        if (graphics_supported && surface_supported) {
+            queue_index = i; 
+            any_queues = true;
             break;
         }
     }
+    if (!any_queues) {
+        fprintf(stderr, "Failed to find a suitable queue");
+        exit(EXIT_FAILURE);
+    }
+
     float queue_priority = 0.5f;
-    VkDeviceQueueCreateInfo device_queue_create_info = {.queueFamilyIndex=graphics_index, .queueCount = 1, .pQueuePriorities = &queue_priority};
+    VkDeviceQueueCreateInfo device_queue_create_info = {.queueFamilyIndex=queue_index, .queueCount = 1, .pQueuePriorities = &queue_priority};
    
     VkPhysicalDeviceExtendedDynamicStateFeaturesEXT dynamic_features = {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT, .pNext = NULL}; 
     VkPhysicalDeviceVulkan11Features vulkan11_features = {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES, .pNext = &dynamic_features};
@@ -374,7 +394,7 @@ void _create_logical_device(struct App* self) {
                                              .enabledExtensionCount = ext_count, .ppEnabledExtensionNames = required_device_extensions};
     self->logical_device = malloc(sizeof(VkDevice));
     vkCreateDevice(self->physical_device, &device_create_info, NULL, &self->logical_device);
-    vkGetDeviceQueue(self->logical_device, graphics_index, 0, &self->graphics_queue);
+    vkGetDeviceQueue(self->logical_device, queue_index, 0, &self->graphics_queue);
 }
 
 
