@@ -91,7 +91,9 @@ void _init_window(struct App* self) {
 void _init_vulkan(struct App* self) {
     _create_instance(self);
     _setup_debug_messenger(self);
+    _create_surface(self);
     _pick_physical_device(self);
+    _create_logical_device(self);
 }
 
 
@@ -361,7 +363,7 @@ void _create_logical_device(struct App* self) {
     uint32_t queue_index = ~0;
     for (int i = 0; i < count; i++) {
         bool graphics_supported = queue_family_properties[i].queueFamilyProperties.queueFlags & VK_QUEUE_GRAPHICS_BIT;
-        VkBool32 surface_supported;
+        VkBool32 surface_supported = false;
         vkGetPhysicalDeviceSurfaceSupportKHR(self->physical_device, i, self->surface, &surface_supported);
         if (graphics_supported && surface_supported) {
             queue_index = i; 
@@ -389,6 +391,7 @@ void _create_logical_device(struct App* self) {
     self->logical_device = malloc(sizeof(VkDevice));
     vkCreateDevice(self->physical_device, &device_create_info, NULL, &self->logical_device);
     vkGetDeviceQueue(self->logical_device, queue_index, 0, &self->queue);
+
 }
 
 
