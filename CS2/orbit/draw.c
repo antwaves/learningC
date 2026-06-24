@@ -28,6 +28,7 @@ void _create_instance(struct App* self);
 void _get_required_instance_extensions(struct App* self);
 void _setup_debug_messenger(struct App* self);
 void _pick_physical_device(struct App* self);
+void _create_logical_device(struct App* self);
 void run(struct App* self);
 
 void check_extensions(const char** glfw_extensions, int glfw_extension_count, bool log);
@@ -53,6 +54,7 @@ struct App {
     VkInstance instance;
     VkDebugUtilsMessengerEXT debug_messenger;
     VkPhysicalDevice physical_device;
+    VkDevice logical_device;
 };
 
 
@@ -296,14 +298,14 @@ void _pick_physical_device(struct App* self) {
 
 
 bool is_device_suitable(VkPhysicalDevice* device) {
-    bool is_suitable = true;
-
+    bool is_suitable;
+    bool supports_vulkan1_3;
     VkPhysicalDeviceProperties2* p_properties = calloc(1, sizeof(VkPhysicalDeviceProperties2));
     vkGetPhysicalDeviceProperties2(*device, p_properties);
-    bool supports_vulkan1_3 = p_properties->properties.apiVersion >= VK_API_VERSION_1_3;
+    supports_vulkan1_3 = p_properties->properties.apiVersion >= VK_API_VERSION_1_3;
 
-    uint32_t count = 0;
     bool supports_graphics = false;
+    uint32_t count = 0;
     vkGetPhysicalDeviceQueueFamilyProperties2(*device, &count, NULL);
     VkQueueFamilyProperties2* queue_family_properties = calloc(1, count * sizeof(VkQueueFamilyProperties2));
     vkGetPhysicalDeviceQueueFamilyProperties2(*device, &count, queue_family_properties);
@@ -326,11 +328,11 @@ bool is_device_suitable(VkPhysicalDevice* device) {
         has_needed_extensions = has_needed_extensions && has_extension;
     }
 
-    VkPhysicalDeviceExtendedDynamicStateFeaturesEXT dynamic_features = {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT, .pNext = NULL};
-    VkPhysicalDeviceVulkan11Features vulkan11_features = {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES, .pNext = &dynamic_features};
-    VkPhysicalDeviceVulkan13Features vulkan13_features = {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES, .pNext = &vulkan11_features};  
-    VkPhysicalDeviceFeatures2 p_features = {.sType=VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2, .pNext =&vulkan13_features};
-    vkGetPhysicalDeviceFeatures2(*device, &p_features);
+    VkPhysicalDeviceExtendedDynamicStateFeaturesEXT dynamic_features = {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT, .pNext = NULL, .extendedDynamicState=true};
+    VkPhysicalDeviceVulkan11Features vulkan11_features = {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES, .pNext = &dynamic_features, .shaderDrawParameters=true};
+    VkPhysicalDeviceVulkan13Features vulkan13_features = {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES, .pNext = &vulkan11_features, .dynamicRendering=true};  
+    VkPhysicalDeviceFeatures2 feature_chain = {.sType=VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2, .pNext =&vulkan13_features};
+    vkGetPhysicalDeviceFeatures2(*device, &feature_chain);
     bool has_needed_features = vulkan11_features.shaderDrawParameters && vulkan13_features.dynamicRendering && dynamic_features.extendedDynamicState;
 
     is_suitable = supports_vulkan1_3 && supports_graphics && has_needed_extensions && has_needed_features;
@@ -340,6 +342,56 @@ bool is_device_suitable(VkPhysicalDevice* device) {
     free(available_device_extensions);
 
     return is_suitable;
+}
+
+
+void _create_logical_device(struct App* self) {
+    VkPhysicalDevice device = self->physical_device;
+    uint32_t count = 0;
+
+    vkGetPhysicalDeviceQueueFamilyProperties2(device, &count, NULL);
+    VkQueueFamilyProperties2* queue_family_properties = calloc(1, count * sizeof(VkQueueFamilyProperties2));
+    vkGetPhysicalDeviceQueueFamilyProperties2(device, &count, queue_family_properties);
+    uint32_t graphics_index = 0;
+    for (int i = 0; i < count; i++) {
+        if (queue_family_properties[i].queueFamilyProperties.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+            graphics_index = i; 
+            break;
+        }
+    }
+    float queue_priority = 0.5f;
+    VkDeviceQueueCreateInfo device_queue_create_info = {.queueFamilyIndex=graphics_index, .queueCount = 1, .pQueuePriorities = &queue_priority};
+   
+    VkPhysicalDeviceExtendedDynamicStateFeaturesEXT dynamic_features = {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT, .pNext = NULL}; 
+    VkPhysicalDeviceVulkan11Features vulkan11_features = {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES, .pNext = &dynamic_features};
+    VkPhysicalDeviceVulkan13Features vulkan13_features = {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES, .pNext = &vulkan11_features};  
+    VkPhysicalDeviceFeatures2 feature_chain = {.sType=VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2, .pNext =&vulkan13_features}; // this sucks
+
+    char *required_device_extensions[] = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+
+}
+
+
+VkPhysicalDeviceFeatures2* get_required_device_features(){
+    VkPhysicalDeviceExtendedDynamicStateFeaturesEXT *dynamic_features = calloc(1, sizeof(VkPhysicalDeviceExtendedDynamicStateFeaturesEXT));
+    *dynamic_features = (VkPhysicalDeviceExtendedDynamicStateFeaturesEXT){.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT, .pNext = NULL};
+    VkPhysicalDeviceVulkan11Features* vulkan11_features = calloc(1, sizeof(VkPhysicalDeviceVulkan11Features));
+    *vulkan11_features = (VkPhysicalDeviceVulkan11Features){.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES, .pNext = &dynamic_features};
+    VkPhysicalDeviceVulkan13Features* vulkan13_features = calloc(1, sizeof(VkPhysicalDeviceVulkan13Features));
+    *vulkan13_features = (VkPhysicalDeviceVulkan13Features){.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES, .pNext = &vulkan11_features};  
+    VkPhysicalDeviceFeatures2* feature_chain = calloc(1, sizeof(VkPhysicalDeviceFeatures2));
+    *feature_chain = (VkPhysicalDeviceFeatures2){.sType=VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2, .pNext =&vulkan13_features};
+    return feature_chain;
+}
+
+
+void free_feature_chain(VkPhysicalDeviceFeatures2* feature_chain) {
+    void* last;
+    void* current = feature_chain;
+    while (current != NULL) {
+        last = current;
+        current = current->pNext;
+    }
 }
 
 
