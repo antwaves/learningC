@@ -74,7 +74,7 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(VkDebugUtilsMessageSeverity
                                                      const VkDebugUtilsMessengerCallbackDataEXT* p_callback_data, \
                                                      void* p_user_data) {
     if (severity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
-        fprintf(stderr, "Validation Layer: type %u msg: %s\n", type, p_callback_data->pMessage);
+        fprintf(stderr, "Validation Layer: type %u msg: %s\n\n", type, p_callback_data->pMessage);
     }
     return VK_FALSE;
 }
@@ -121,6 +121,7 @@ void _clean_up(struct App* self) {
 
     vkDeviceWaitIdle(self->logical_device);
     vkDestroySwapchainKHR(self->logical_device, self->swap_chain, NULL);
+    vkDestroySurfaceKHR(self->instance, self->surface, NULL);
     vkDestroyDevice(self->logical_device, NULL);
     vkDestroyInstance(self->instance, NULL);
     glfwDestroyWindow(self->window);
@@ -145,8 +146,9 @@ void _create_instance(struct App* self) {
                                         .pApplicationInfo = &app_info,
                                         .enabledExtensionCount = extension_info.extension_count, 
                                         .ppEnabledExtensionNames = extension_info.extension_names,
-                                        .enabledLayerCount = 0, 
-                                        .ppEnabledLayerNames = NULL};
+                                        .enabledLayerCount = 1, 
+                                        .ppEnabledLayerNames = enable_validation_layers ? validation_layers : NULL
+                                    };
     
     if (vkCreateInstance(&create_info, NULL, &(self->instance)) != VK_SUCCESS) {
         perror("Error: ");
@@ -250,7 +252,6 @@ void check_validation_layers() {
 void _setup_debug_messenger(struct App* self) {
     if (!enable_validation_layers) return;
 
-    PFN_vkCreateDebugUtilsMessengerEXT pfnVkCeateDebugUtilsMessengerEXT = NULL;
     LOAD_INSTANCE_EXT(self->instance, vkCreateDebugUtilsMessengerEXT);
 
     if (vkCreateDebugUtilsMessengerEXT == NULL) {
@@ -267,10 +268,13 @@ void _setup_debug_messenger(struct App* self) {
                                                          VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT | 
                                                          VK_DEBUG_UTILS_MESSAGE_TYPE_DEVICE_ADDRESS_BINDING_BIT_EXT;
 
-    VkDebugUtilsMessengerCreateInfoEXT debug_utils_messenger_create_info_ext = {0};
-    debug_utils_messenger_create_info_ext.messageSeverity = severity_flags;
-    debug_utils_messenger_create_info_ext.messageType = message_type_flags;
-    debug_utils_messenger_create_info_ext.pfnUserCallback = &debug_callback;
+    VkDebugUtilsMessengerCreateInfoEXT debug_utils_messenger_create_info_ext = {
+        .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT,
+        .messageSeverity = severity_flags,
+        .messageType = message_type_flags, 
+        .pfnUserCallback = &debug_callback
+    };
+
 
     VkResult result = vkCreateDebugUtilsMessengerEXT(self->instance, &debug_utils_messenger_create_info_ext, NULL, &self->debug_messenger);
     if (result != VK_SUCCESS) {
@@ -320,13 +324,15 @@ bool is_device_suitable(VkPhysicalDevice* device) {
     bool is_suitable;
     bool supports_vulkan1_3;
     VkPhysicalDeviceProperties2* p_properties = calloc(1, sizeof(VkPhysicalDeviceProperties2));
+    p_properties->sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
     vkGetPhysicalDeviceProperties2(*device, p_properties);
     supports_vulkan1_3 = p_properties->properties.apiVersion >= VK_API_VERSION_1_3;
 
     bool supports_graphics = false;
     uint32_t count = 0;
     vkGetPhysicalDeviceQueueFamilyProperties2(*device, &count, NULL);
-    VkQueueFamilyProperties2* queue_family_properties = calloc(1, count * sizeof(VkQueueFamilyProperties2));
+    VkQueueFamilyProperties2* queue_family_properties = calloc(count, sizeof(VkQueueFamilyProperties2));
+    for (int j = 0; j < count; j++) { queue_family_properties[j].sType = VK_STRUCTURE_TYPE_QUEUE_FAMILY_PROPERTIES_2; }
     vkGetPhysicalDeviceQueueFamilyProperties2(*device, &count, queue_family_properties);
     for (int j = 0; j < count; j++) {
         supports_graphics = supports_graphics || queue_family_properties[j].queueFamilyProperties.queueFlags & VK_QUEUE_GRAPHICS_BIT;
@@ -370,8 +376,11 @@ void _create_logical_device(struct App* self) {
 
     bool any_queues = false;
     vkGetPhysicalDeviceQueueFamilyProperties2(device, &count, NULL);
-    VkQueueFamilyProperties2* queue_family_properties = calloc(1, count * sizeof(VkQueueFamilyProperties2));
+
+    VkQueueFamilyProperties2* queue_family_properties = calloc(count, sizeof(VkQueueFamilyProperties2));
+    for (int i = 0; i < count; i++) { queue_family_properties[i].sType = VK_STRUCTURE_TYPE_QUEUE_FAMILY_PROPERTIES_2; }
     vkGetPhysicalDeviceQueueFamilyProperties2(device, &count, queue_family_properties);
+
     uint32_t queue_index = ~0;
     for (int i = 0; i < count; i++) {
         bool graphics_supported = queue_family_properties[i].queueFamilyProperties.queueFlags & VK_QUEUE_GRAPHICS_BIT;
