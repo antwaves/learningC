@@ -31,6 +31,7 @@ void _create_surface(struct App* self);
 void _pick_physical_device(struct App* self);
 void _create_logical_device(struct App* self);
 void _create_swap_chain(struct App* self);
+void _create_image_views(struct App* self);
 void run(struct App* self);
 
 void check_extensions(const char** glfw_extensions, int glfw_extension_count, bool log);
@@ -65,8 +66,10 @@ struct App {
     VkQueue queue;
     VkSwapchainKHR swap_chain;
     VkImage* swap_chain_images;
+    uint32_t swap_chain_image_count;
     VkSurfaceFormatKHR swap_chain_surface_format;
     VkExtent2D swap_chain_extent;
+    VkImageView* swap_chain_image_views;
 };
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT severity, \
@@ -103,6 +106,7 @@ void _init_vulkan(struct App* self) {
     _pick_physical_device(self);
     _create_logical_device(self);
     _create_swap_chain(self);
+    _create_image_views(self);
 }
 
 
@@ -120,6 +124,8 @@ void _clean_up(struct App* self) {
     }
 
     vkDeviceWaitIdle(self->logical_device);
+    for (int i = 0; i < self->swap_chain_image_count; i++) { vkDestroyImageView(self->logical_device, self->swap_chain_image_views[i], NULL); }
+    free(self->swap_chain_images);
     vkDestroySwapchainKHR(self->logical_device, self->swap_chain, NULL);
     vkDestroySurfaceKHR(self->instance, self->surface, NULL);
     vkDestroyDevice(self->logical_device, NULL);
@@ -463,8 +469,14 @@ void _create_swap_chain(struct App* self) {
         exit(EXIT_FAILURE);
     }
 
-    uint32_t image_count = 0;
-    vkGetSwapchainImagesKHR(self->logical_device, self->swap_chain, &image_count, self->swap_chain_images);
+    
+    vkGetSwapchainImagesKHR(self->logical_device, self->swap_chain, &self->swap_chain_image_count, NULL);
+    self->swap_chain_images = calloc(self->swap_chain_image_count, sizeof(VkImage));
+    if (vkGetSwapchainImagesKHR(self->logical_device, self->swap_chain, &self->swap_chain_image_count, self->swap_chain_images) != VK_SUCCESS) {
+        fprintf(stderr, "Failed to grab swap chain images!");
+        exit(EXIT_FAILURE);
+    }
+ 
     self->swap_chain_surface_format = swap_format;
     self->swap_chain_extent = swap_extent;
 
@@ -520,6 +532,25 @@ uint32_t choose_swap_min_image_count(VkSurfaceCapabilitiesKHR* capabilities) {
         min_image_count = capabilities->maxImageCount;
     }
     return min_image_count;
+}
+
+
+void _create_image_views(struct App* self) {
+    VkImageViewCreateInfo image_view_create_info = {
+        .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+        .viewType = VK_IMAGE_VIEW_TYPE_2D,
+        .format = self->swap_chain_surface_format.format,
+        .subresourceRange = {
+            VK_IMAGE_ASPECT_COLOR_BIT, 
+            .levelCount = 1,
+            .layerCount = 1}
+    };
+
+    self->swap_chain_image_views = calloc(self->swap_chain_image_count, sizeof(VkImageView));
+    for (int i = 0; i < self->swap_chain_image_count; i++) {
+        image_view_create_info.image = self->swap_chain_images[i];
+        vkCreateImageView(self->logical_device, &image_view_create_info, NULL, &self->swap_chain_image_views[i]);
+    }
 }
 
 
