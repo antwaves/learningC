@@ -36,6 +36,7 @@ void run(struct App* self);
 void check_extensions(const char** glfw_extensions, int glfw_extension_count, bool log);
 void check_validation_layers();
 bool is_device_suitable(VkPhysicalDevice* device);
+VkSurfaceFormatKHR choose_swap_surface_format(VkSurfaceFormatKHR* available_formats, uint32_t items);
 
 #define LOAD_INSTANCE_EXT(instance, func_name) PFN_##func_name func_name = (PFN_##func_name)vkGetInstanceProcAddr(instance, #func_name); 
 
@@ -65,7 +66,7 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(VkDebugUtilsMessageSeverity
                                                      VkDebugUtilsMessageTypeFlagsEXT type, \
                                                      const VkDebugUtilsMessengerCallbackDataEXT* p_callback_data, \
                                                      void* p_user_data) {
-    if (severity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
+    if (severity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT) {
         fprintf(stderr, "Validation Layer: type %u msg: %s\n", type, p_callback_data->pMessage);
     }
     return VK_FALSE;
@@ -94,6 +95,7 @@ void _init_vulkan(struct App* self) {
     _create_surface(self);
     _pick_physical_device(self);
     _create_logical_device(self);
+    _create_swap_chain(self);
 }
 
 
@@ -110,8 +112,9 @@ void _clean_up(struct App* self) {
         vkDestroyDebugUtilsMessengerEXT(self->instance, self->debug_messenger, NULL);
     }
 
-    vkDestroyInstance(self->instance, NULL);
+    vkDeviceWaitIdle(self->logical_device);
     vkDestroyDevice(self->logical_device, NULL);
+    vkDestroyInstance(self->instance, NULL);
     glfwDestroyWindow(self->window);
     glfwTerminate();
     free(self->extensions.extension_names);
@@ -248,7 +251,8 @@ void _setup_debug_messenger(struct App* self) {
     }
 
     VkDebugUtilsMessageSeverityFlagsEXT severity_flags = VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | 
-                                                         VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT; 
+                                                         VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT |
+                                                         VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT ; 
 
     VkDebugUtilsMessageTypeFlagsEXT message_type_flags = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | 
                                                          VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | 
@@ -377,7 +381,10 @@ void _create_logical_device(struct App* self) {
     }
 
     float queue_priority = 0.5f;
-    VkDeviceQueueCreateInfo device_queue_create_info = {.queueFamilyIndex=queue_index, .queueCount = 1, .pQueuePriorities = &queue_priority};
+    VkDeviceQueueCreateInfo device_queue_create_info = {.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
+                                                        .queueFamilyIndex=queue_index, 
+                                                        .queueCount = 1, 
+                                                        .pQueuePriorities = &queue_priority};
    
     VkPhysicalDeviceExtendedDynamicStateFeaturesEXT dynamic_features = {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT, .pNext = NULL}; 
     VkPhysicalDeviceVulkan11Features vulkan11_features = {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES, .pNext = &dynamic_features};
@@ -386,11 +393,17 @@ void _create_logical_device(struct App* self) {
 
     const char *required_device_extensions[] = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
     uint32_t ext_count = sizeof(required_device_extensions) / sizeof(char*);
-    VkDeviceCreateInfo device_create_info = {.pNext = &feature_chain, .queueCreateInfoCount = 1, .pQueueCreateInfos = &device_queue_create_info, 
-                                             .enabledExtensionCount = ext_count, .ppEnabledExtensionNames = required_device_extensions};
-    self->logical_device = malloc(sizeof(VkDevice));
-    vkCreateDevice(self->physical_device, &device_create_info, NULL, &self->logical_device);
-    vkGetDeviceQueue(self->logical_device, queue_index, 0, &self->queue);
+    VkDeviceCreateInfo device_create_info = {.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
+                                             .pNext = &feature_chain, 
+                                             .queueCreateInfoCount = 1, 
+                                             .pQueueCreateInfos = &device_queue_create_info, 
+                                             .enabledExtensionCount = ext_count, 
+                                             .ppEnabledExtensionNames = required_device_extensions};    
+    if (vkCreateDevice(self->physical_device, &device_create_info, NULL, &self->logical_device) != VK_SUCCESS) {
+        fprintf(stderr, "Failed to create logical device");
+        exit(EXIT_FAILURE);
+    }
+     vkGetDeviceQueue(self->logical_device, queue_index, 0, &self->queue);
 
 }
 
@@ -408,9 +421,25 @@ void _create_swap_chain(struct App* self) {
     vkGetPhysicalDeviceSurfacePresentModesKHR(self->physical_device, self->surface, &mode_count, available_present_modes);
 
 
+    VkSurfaceFormatKHR swap_format = choose_swap_surface_format(available_formats, format_count);
     free(available_formats);
     free(surface_capabilities);
     free(available_present_modes);
+}
+
+
+
+VkSurfaceFormatKHR choose_swap_surface_format(VkSurfaceFormatKHR* available_formats, uint32_t items) {
+    VkSurfaceFormatKHR* format_preferred = NULL;
+    for (int i = 0; i < items; i++) {
+        VkSurfaceFormatKHR f = available_formats[i];
+        if (f.format == VK_FORMAT_R8G8B8A8_SRGB && f.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)  {
+            format_preferred = &f;
+            break;
+        }
+    }
+    
+    return format_preferred == NULL ? available_formats[0] : *format_preferred;
 }
 
 
