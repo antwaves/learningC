@@ -63,13 +63,17 @@ struct App {
     VkPhysicalDevice physical_device;
     VkDevice logical_device;
     VkQueue queue;
+    VkSwapchainKHR swap_chain;
+    VkImage* swap_chain_images;
+    VkSurfaceFormatKHR swap_chain_surface_format;
+    VkExtent2D swap_chain_extent;
 };
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT severity, \
                                                      VkDebugUtilsMessageTypeFlagsEXT type, \
                                                      const VkDebugUtilsMessengerCallbackDataEXT* p_callback_data, \
                                                      void* p_user_data) {
-    if (severity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT) {
+    if (severity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
         fprintf(stderr, "Validation Layer: type %u msg: %s\n", type, p_callback_data->pMessage);
     }
     return VK_FALSE;
@@ -116,6 +120,7 @@ void _clean_up(struct App* self) {
     }
 
     vkDeviceWaitIdle(self->logical_device);
+    vkDestroySwapchainKHR(self->logical_device, self->swap_chain, NULL);
     vkDestroyDevice(self->logical_device, NULL);
     vkDestroyInstance(self->instance, NULL);
     glfwDestroyWindow(self->window);
@@ -406,8 +411,7 @@ void _create_logical_device(struct App* self) {
         fprintf(stderr, "Failed to create logical device");
         exit(EXIT_FAILURE);
     }
-     vkGetDeviceQueue(self->logical_device, queue_index, 0, &self->queue);
-
+    vkGetDeviceQueue(self->logical_device, queue_index, 0, &self->queue);
 }
 
 
@@ -425,7 +429,35 @@ void _create_swap_chain(struct App* self) {
 
     VkSurfaceFormatKHR swap_format = choose_swap_surface_format(available_formats, format_count);
     VkPresentModeKHR present_mode = choose_present_mode(available_present_modes, mode_count);
-    VkExtent2D extent = choose_swap_extent(self->window, surface_capabilities);
+    VkExtent2D swap_extent = choose_swap_extent(self->window, surface_capabilities);
+    uint32_t min_image_count = choose_swap_min_image_count(surface_capabilities);
+
+    VkSwapchainCreateInfoKHR swap_chain_info = {
+        .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
+        .surface = self->surface,
+        .minImageCount = min_image_count,
+        .imageFormat = swap_format.format,
+        .imageColorSpace = swap_format.colorSpace,
+        .imageExtent = swap_extent, 
+        .imageArrayLayers = 1,
+        .imageUsage =  VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, 
+        .imageSharingMode = VK_SHARING_MODE_EXCLUSIVE,
+        .preTransform = surface_capabilities->currentTransform,
+        .compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
+        .presentMode = present_mode,
+        .clipped = true,
+    };
+    swap_chain_info.oldSwapchain = NULL;
+    
+    if (vkCreateSwapchainKHR(self->logical_device, &swap_chain_info, NULL, &self->swap_chain) != VK_SUCCESS) {
+        fprintf(stderr, "Failed to create swap_chain!");
+        exit(EXIT_FAILURE);
+    }
+
+    uint32_t image_count = 0;
+    vkGetSwapchainImagesKHR(self->logical_device, self->swap_chain, &image_count, self->swap_chain_images);
+    self->swap_chain_surface_format = swap_format;
+    self->swap_chain_extent = swap_extent;
 
     free(available_formats);
     free(surface_capabilities);
