@@ -37,8 +37,12 @@ void check_extensions(const char** glfw_extensions, int glfw_extension_count, bo
 void check_validation_layers();
 bool is_device_suitable(VkPhysicalDevice* device);
 VkSurfaceFormatKHR choose_swap_surface_format(VkSurfaceFormatKHR* available_formats, uint32_t items);
+VkPresentModeKHR choose_present_mode(VkPresentModeKHR* available_modes, uint32_t items);
+VkExtent2D choose_swap_extent(GLFWwindow* window, VkSurfaceCapabilitiesKHR *capabilities);uint32_t choose_swap_min_image_count(VkSurfaceCapabilitiesKHR* capabilities);
+uint32_t choose_swap_min_image_count(VkSurfaceCapabilitiesKHR* capabilities);
 
 #define LOAD_INSTANCE_EXT(instance, func_name) PFN_##func_name func_name = (PFN_##func_name)vkGetInstanceProcAddr(instance, #func_name); 
+#define clamp(d, min, max) (d < min ? min : d) > max ? max : (d < min ? min : d)
 
 struct extension_info {
     uint32_t extension_count;
@@ -60,7 +64,6 @@ struct App {
     VkDevice logical_device;
     VkQueue queue;
 };
-
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT severity, \
                                                      VkDebugUtilsMessageTypeFlagsEXT type, \
@@ -420,8 +423,10 @@ void _create_swap_chain(struct App* self) {
     VkPresentModeKHR* available_present_modes = calloc(mode_count, sizeof(VkPresentModeKHR));
     vkGetPhysicalDeviceSurfacePresentModesKHR(self->physical_device, self->surface, &mode_count, available_present_modes);
 
-
     VkSurfaceFormatKHR swap_format = choose_swap_surface_format(available_formats, format_count);
+    VkPresentModeKHR present_mode = choose_present_mode(available_present_modes, mode_count);
+    VkExtent2D extent = choose_swap_extent(self->window, surface_capabilities);
+
     free(available_formats);
     free(surface_capabilities);
     free(available_present_modes);
@@ -440,6 +445,40 @@ VkSurfaceFormatKHR choose_swap_surface_format(VkSurfaceFormatKHR* available_form
     }
     
     return format_preferred == NULL ? available_formats[0] : *format_preferred;
+}
+
+
+VkPresentModeKHR choose_present_mode(VkPresentModeKHR* available_modes, uint32_t items) {
+    VkPresentModeKHR* mode_preferred = NULL;
+    for (int i = 0; i < items; i++) {
+        if (available_modes[i] == VK_PRESENT_MODE_MAILBOX_KHR) {
+            mode_preferred = &available_modes[i];
+        }
+    }
+    return mode_preferred == NULL ? VK_PRESENT_MODE_FIFO_KHR : *mode_preferred;
+}
+
+
+VkExtent2D choose_swap_extent(GLFWwindow* window, VkSurfaceCapabilitiesKHR *capabilities) {
+    VkSurfaceCapabilitiesKHR c = *capabilities;
+    if (c.currentExtent.width !=  UINT32_MAX) {
+        return c.currentExtent;
+    }
+    
+    int width, height;
+    glfwGetFramebufferSize(window, &width, &height);
+    VkExtent2D extent = {clamp(width, c.minImageExtent.width, c.maxImageExtent.width), 
+                         clamp(height, c.minImageExtent.height, c.maxImageExtent.width)};
+    return extent;
+}
+
+
+uint32_t choose_swap_min_image_count(VkSurfaceCapabilitiesKHR* capabilities) {
+    uint32_t min_image_count = max(3u, capabilities->minImageCount);
+    if ((0 < capabilities->maxImageCount) && capabilities->maxImageCount < min_image_count) {
+        min_image_count = capabilities->maxImageCount;
+    }
+    return min_image_count;
 }
 
 
