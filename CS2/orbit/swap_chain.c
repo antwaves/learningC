@@ -6,10 +6,10 @@ void _create_swap_chain(struct App* self);
 void _create_image_views(struct App* self);
 void _create_graphics_pipeline(struct App* self);
 
-VkSurfaceFormatKHR choose_swap_surface_format(VkSurfaceFormatKHR* available_formats, uint32_t items);
-VkPresentModeKHR choose_present_mode(VkPresentModeKHR* available_modes, uint32_t items);
-VkExtent2D choose_swap_extent(GLFWwindow* window, VkSurfaceCapabilitiesKHR *capabilities);uint32_t choose_swap_min_image_count(VkSurfaceCapabilitiesKHR* capabilities);
-uint32_t choose_swap_min_image_count(VkSurfaceCapabilitiesKHR* capabilities);
+static VkSurfaceFormatKHR choose_swap_surface_format(VkSurfaceFormatKHR* available_formats, uint32_t items);
+static VkPresentModeKHR choose_present_mode(VkPresentModeKHR* available_modes, uint32_t items);
+static VkExtent2D choose_swap_extent(GLFWwindow* window, VkSurfaceCapabilitiesKHR *capabilities);uint32_t choose_swap_min_image_count(VkSurfaceCapabilitiesKHR* capabilities);
+static uint32_t choose_swap_min_image_count(VkSurfaceCapabilitiesKHR* capabilities);
 
 #define clamp(d, min, max) (d < min ? min : d) > max ? max : (d < min ? min : d)
 
@@ -71,7 +71,7 @@ void _create_swap_chain(struct App* self) {
 
 
 
-VkSurfaceFormatKHR choose_swap_surface_format(VkSurfaceFormatKHR* available_formats, uint32_t items) {
+static VkSurfaceFormatKHR choose_swap_surface_format(VkSurfaceFormatKHR* available_formats, uint32_t items) {
     VkSurfaceFormatKHR* format_preferred = NULL;
     for (int i = 0; i < items; i++) {
         VkSurfaceFormatKHR f = available_formats[i];
@@ -85,7 +85,7 @@ VkSurfaceFormatKHR choose_swap_surface_format(VkSurfaceFormatKHR* available_form
 }
 
 
-VkPresentModeKHR choose_present_mode(VkPresentModeKHR* available_modes, uint32_t items) {
+static VkPresentModeKHR choose_present_mode(VkPresentModeKHR* available_modes, uint32_t items) {
     VkPresentModeKHR* mode_preferred = NULL;
     for (int i = 0; i < items; i++) {
         if (available_modes[i] == VK_PRESENT_MODE_MAILBOX_KHR) {
@@ -96,7 +96,7 @@ VkPresentModeKHR choose_present_mode(VkPresentModeKHR* available_modes, uint32_t
 }
 
 
-VkExtent2D choose_swap_extent(GLFWwindow* window, VkSurfaceCapabilitiesKHR *capabilities) {
+static VkExtent2D choose_swap_extent(GLFWwindow* window, VkSurfaceCapabilitiesKHR *capabilities) {
     VkSurfaceCapabilitiesKHR c = *capabilities;
     if (c.currentExtent.width !=  UINT32_MAX) {
         return c.currentExtent;
@@ -110,7 +110,7 @@ VkExtent2D choose_swap_extent(GLFWwindow* window, VkSurfaceCapabilitiesKHR *capa
 }
 
 
-uint32_t choose_swap_min_image_count(VkSurfaceCapabilitiesKHR* capabilities) {
+static uint32_t choose_swap_min_image_count(VkSurfaceCapabilitiesKHR* capabilities) {
     uint32_t min_image_count = max(3u, capabilities->minImageCount);
     if ((0 < capabilities->maxImageCount) && capabilities->maxImageCount < min_image_count) {
         min_image_count = capabilities->maxImageCount;

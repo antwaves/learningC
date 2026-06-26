@@ -6,7 +6,7 @@
 #include <string.h>
 
 void _pick_physical_device(struct App* self);
-bool is_device_suitable(VkPhysicalDevice* device);
+static bool is_device_suitable(VkPhysicalDevice* device);
 
 
 void _pick_physical_device(struct App* self) {
@@ -37,7 +37,7 @@ void _pick_physical_device(struct App* self) {
 }
 
 
-bool is_device_suitable(VkPhysicalDevice* device) {
+static bool is_device_suitable(VkPhysicalDevice* device) {
     bool is_suitable;
     bool supports_vulkan1_3;
     VkPhysicalDeviceProperties2* p_properties = calloc(1, sizeof(VkPhysicalDeviceProperties2));

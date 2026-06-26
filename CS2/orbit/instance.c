@@ -8,8 +8,8 @@
 #include "validate.h"
 
 void _create_instance(struct App* self);
-void _get_required_instance_extensions(struct App* self);
-void check_extensions(const char** glfw_extensions, int glfw_extension_count, bool log);
+static void _get_required_instance_extensions(struct App* self);
+static void check_extensions(const char** glfw_extensions, int glfw_extension_count, bool log);
 void _create_surface(struct App* self);
 
 
@@ -40,7 +40,7 @@ void _create_instance(struct App* self) {
 }
 
 
-void _get_required_instance_extensions(struct App* self) {
+static void _get_required_instance_extensions(struct App* self) {
     uint32_t glfw_extension_count = 0;
     const char** glfw_extensions = glfwGetRequiredInstanceExtensions(&glfw_extension_count);
 
@@ -63,7 +63,7 @@ void _get_required_instance_extensions(struct App* self) {
 }
 
 
-void check_extensions(const char** glfw_extensions, int glfw_extension_count, bool log) { // TODO: PASS EXTENSIONS BACK OUT
+static void check_extensions(const char** glfw_extensions, int glfw_extension_count, bool log) { // TODO: PASS EXTENSIONS BACK OUT
     uint32_t extension_count = 0;
     vkEnumerateInstanceExtensionProperties(NULL, &extension_count, NULL);
 
