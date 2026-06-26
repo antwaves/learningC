@@ -5,6 +5,11 @@
 #include "app.h"
 #include "validate.h"
 
+static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT severity, VkDebugUtilsMessageTypeFlagsEXT type, \
+                                                     const VkDebugUtilsMessengerCallbackDataEXT* p_callback_data, void* p_user_data);
+void check_validation_layers();
+void _setup_debug_messenger(struct App* self);
+
 static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT severity, \
                                                      VkDebugUtilsMessageTypeFlagsEXT type, \
                                                      const VkDebugUtilsMessengerCallbackDataEXT* p_callback_data, \

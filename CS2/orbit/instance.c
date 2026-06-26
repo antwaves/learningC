@@ -10,6 +10,7 @@
 void _create_instance(struct App* self);
 void _get_required_instance_extensions(struct App* self);
 void check_extensions(const char** glfw_extensions, int glfw_extension_count, bool log);
+void _create_surface(struct App* self);
 
 
 void _create_instance(struct App* self) {
@@ -100,4 +101,12 @@ void check_extensions(const char** glfw_extensions, int glfw_extension_count, bo
     }
 
     free(extensions);
+}
+
+
+void _create_surface(struct App* self) {
+    if (glfwCreateWindowSurface(self->instance, self->window, NULL, &self->surface) != 0) {
+        fprintf_s(stderr, "Failed to create window surface!");
+        exit(EXIT_FAILURE);
+    }
 }

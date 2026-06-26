@@ -1,31 +1,19 @@
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
 #include "app.h"
 #include "validate.c"
 #include "instance.c"
-
+#include "physical_device.c"
+#include "logical_device.c"
+#include "swap_chain.c"
+#include "graphics_pipeline.c"
 
 void _init_window(struct App* self);
 void _init_vulkan(struct App* self);
 void _main_loop(struct App* self);
 void _clean_up(struct App* self);
-void _create_surface(struct App* self);
-void _pick_physical_device(struct App* self);
-void _create_logical_device(struct App* self);
-void _create_swap_chain(struct App* self);
-void _create_image_views(struct App* self);
-void _create_graphics_pipeline(struct App* self);
 
-bool is_device_suitable(VkPhysicalDevice* device);
-VkSurfaceFormatKHR choose_swap_surface_format(VkSurfaceFormatKHR* available_formats, uint32_t items);
-VkPresentModeKHR choose_present_mode(VkPresentModeKHR* available_modes, uint32_t items);
-VkExtent2D choose_swap_extent(GLFWwindow* window, VkSurfaceCapabilitiesKHR *capabilities);uint32_t choose_swap_min_image_count(VkSurfaceCapabilitiesKHR* capabilities);
-uint32_t choose_swap_min_image_count(VkSurfaceCapabilitiesKHR* capabilities);
-
-#define clamp(d, min, max) (d < min ? min : d) > max ? max : (d < min ? min : d)
+void run(struct App* self);
+struct App* init();
+void destroy_app(struct App* a);
 
 
 void _init_window(struct App* self) {
@@ -73,265 +61,24 @@ void _clean_up(struct App* self) {
 }
 
 
-void _create_surface(struct App* self) {
-    if (glfwCreateWindowSurface(self->instance, self->window, NULL, &self->surface) != 0) {
-        fprintf_s(stderr, "Failed to create window surface!");
-        exit(EXIT_FAILURE);
-    }
+void run(struct App* self) {
+    _init_window(self);
+    _init_vulkan(self);
+    _main_loop(self);
+    _clean_up(self);
 }
 
 
-void _pick_physical_device(struct App* self) {
-    uint32_t device_count = 0;
-    vkEnumeratePhysicalDevices(self->instance, &device_count, NULL);
-
-    if (device_count == 0) {
-        fprintf_s(stderr, "Failed to find GPU's with vulkan support");
-        exit(EXIT_FAILURE);
-    }
-
-    VkPhysicalDevice* devices = calloc(1, sizeof(VkPhysicalDevice) * device_count);
-    vkEnumeratePhysicalDevices(self->instance, &device_count, devices);
-
-    for (int i = 0; i < device_count; i++) {
-        VkPhysicalDevice physical_device = devices[i];
-        if (is_device_suitable(&physical_device)) {
-            self->physical_device = physical_device;
-        }
-    }
-
-    if (self->physical_device == NULL) {
-        fprintf_s(stderr, "Failed to find a suitable GPU");
-        exit(EXIT_FAILURE);
-    }
-
-    free(devices);
+struct App* init() {
+    struct App* a = calloc(1, sizeof(struct App));
+    a->run = run;
+    a->WIDTH = 800;
+    a->HEIGHT = 600;
+    a->log = true;
+    return a;
 }
 
 
-bool is_device_suitable(VkPhysicalDevice* device) {
-    bool is_suitable;
-    bool supports_vulkan1_3;
-    VkPhysicalDeviceProperties2* p_properties = calloc(1, sizeof(VkPhysicalDeviceProperties2));
-    p_properties->sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
-    vkGetPhysicalDeviceProperties2(*device, p_properties);
-    supports_vulkan1_3 = p_properties->properties.apiVersion >= VK_API_VERSION_1_3;
-
-    bool supports_graphics = false;
-    uint32_t count = 0;
-    vkGetPhysicalDeviceQueueFamilyProperties2(*device, &count, NULL);
-    VkQueueFamilyProperties2* queue_family_properties = calloc(count, sizeof(VkQueueFamilyProperties2));
-    for (int j = 0; j < count; j++) { queue_family_properties[j].sType = VK_STRUCTURE_TYPE_QUEUE_FAMILY_PROPERTIES_2; }
-    vkGetPhysicalDeviceQueueFamilyProperties2(*device, &count, queue_family_properties);
-    for (int j = 0; j < count; j++) {
-        supports_graphics = supports_graphics || queue_family_properties[j].queueFamilyProperties.queueFlags & VK_QUEUE_GRAPHICS_BIT;
-    }
-
-    bool has_needed_extensions = true;
-    char *required_device_extensions[] = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
-    uint32_t elms = sizeof(required_device_extensions) / sizeof(char*);
-    uint32_t available_ext_count = 0;
-    vkEnumerateDeviceExtensionProperties(*device, NULL, &available_ext_count, NULL);
-    VkExtensionProperties* available_device_extensions = calloc(1, sizeof(VkExtensionProperties) * available_ext_count);
-    vkEnumerateDeviceExtensionProperties(*device, NULL, &available_ext_count, available_device_extensions);
-    for (int i = 0; i < elms; i++) {
-        bool has_extension = false;
-        for (int j = 0; j < available_ext_count; j++) {
-            has_extension = has_extension || strcmp(available_device_extensions[j].extensionName, required_device_extensions[i]) == 0;
-        }
-        has_needed_extensions = has_needed_extensions && has_extension;
-    }
-
-    VkPhysicalDeviceExtendedDynamicStateFeaturesEXT dynamic_features = {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT, .pNext = NULL, .extendedDynamicState=true};
-    VkPhysicalDeviceVulkan11Features vulkan11_features = {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES, .pNext = &dynamic_features, .shaderDrawParameters=true};
-    VkPhysicalDeviceVulkan13Features vulkan13_features = {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES, .pNext = &vulkan11_features, .dynamicRendering=true};  
-    VkPhysicalDeviceFeatures2 feature_chain = {.sType=VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2, .pNext =&vulkan13_features};
-    vkGetPhysicalDeviceFeatures2(*device, &feature_chain);
-    bool has_needed_features = vulkan11_features.shaderDrawParameters && vulkan13_features.dynamicRendering && dynamic_features.extendedDynamicState;
-
-    is_suitable = supports_vulkan1_3 && supports_graphics && has_needed_extensions && has_needed_features;
-
-    free(p_properties);
-    free(queue_family_properties);
-    free(available_device_extensions);
-
-    return is_suitable;
-}
-
-
-void _create_logical_device(struct App* self) {
-    VkPhysicalDevice device = self->physical_device;
-    uint32_t count = 0;
-
-    bool any_queues = false;
-    vkGetPhysicalDeviceQueueFamilyProperties2(device, &count, NULL);
-
-    VkQueueFamilyProperties2* queue_family_properties = calloc(count, sizeof(VkQueueFamilyProperties2));
-    for (int i = 0; i < count; i++) { queue_family_properties[i].sType = VK_STRUCTURE_TYPE_QUEUE_FAMILY_PROPERTIES_2; }
-    vkGetPhysicalDeviceQueueFamilyProperties2(device, &count, queue_family_properties);
-
-    uint32_t queue_index = ~0;
-    for (int i = 0; i < count; i++) {
-        bool graphics_supported = queue_family_properties[i].queueFamilyProperties.queueFlags & VK_QUEUE_GRAPHICS_BIT;
-        VkBool32 surface_supported = false;
-        vkGetPhysicalDeviceSurfaceSupportKHR(self->physical_device, i, self->surface, &surface_supported);
-        if (graphics_supported && surface_supported) {
-            queue_index = i; 
-            any_queues = true;
-            break;
-        }
-    }
-    if (!any_queues) {
-        fprintf_s(stderr, "Failed to find a suitable queue");
-        exit(EXIT_FAILURE);
-    }
-
-    float queue_priority = 0.5f;
-    VkDeviceQueueCreateInfo device_queue_create_info = {.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
-                                                        .queueFamilyIndex=queue_index, 
-                                                        .queueCount = 1, 
-                                                        .pQueuePriorities = &queue_priority};
-   
-    VkPhysicalDeviceExtendedDynamicStateFeaturesEXT dynamic_features = {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT, .pNext = NULL}; 
-    VkPhysicalDeviceVulkan11Features vulkan11_features = {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES, .pNext = &dynamic_features};
-    VkPhysicalDeviceVulkan13Features vulkan13_features = {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES, .pNext = &vulkan11_features};  
-    VkPhysicalDeviceFeatures2 feature_chain = {.sType=VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2, .pNext =&vulkan13_features}; // this sucks
-
-    const char *required_device_extensions[] = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
-    uint32_t ext_count = sizeof(required_device_extensions) / sizeof(char*);
-    VkDeviceCreateInfo device_create_info = {.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
-                                             .pNext = &feature_chain, 
-                                             .queueCreateInfoCount = 1, 
-                                             .pQueueCreateInfos = &device_queue_create_info, 
-                                             .enabledExtensionCount = ext_count, 
-                                             .ppEnabledExtensionNames = required_device_extensions};    
-    if (vkCreateDevice(self->physical_device, &device_create_info, NULL, &self->logical_device) != VK_SUCCESS) {
-        fprintf_s(stderr, "Failed to create logical device");
-        exit(EXIT_FAILURE);
-    }
-    vkGetDeviceQueue(self->logical_device, queue_index, 0, &self->queue);
-}
-
-
-void _create_swap_chain(struct App* self) {
-    VkSurfaceCapabilitiesKHR* surface_capabilities = calloc(1, sizeof(VkSurfaceCapabilitiesKHR));
-    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(self->physical_device, self->surface, surface_capabilities);
-    uint32_t format_count = 0;
-    vkGetPhysicalDeviceSurfaceFormatsKHR(self->physical_device, self->surface, &format_count, NULL);
-    VkSurfaceFormatKHR* available_formats = calloc(format_count, sizeof(VkSurfaceFormatKHR));
-    vkGetPhysicalDeviceSurfaceFormatsKHR(self->physical_device, self->surface, &format_count, available_formats);
-    uint32_t mode_count = 0;
-    vkGetPhysicalDeviceSurfacePresentModesKHR(self->physical_device, self->surface, &mode_count, NULL);
-    VkPresentModeKHR* available_present_modes = calloc(mode_count, sizeof(VkPresentModeKHR));
-    vkGetPhysicalDeviceSurfacePresentModesKHR(self->physical_device, self->surface, &mode_count, available_present_modes);
-
-    VkSurfaceFormatKHR swap_format = choose_swap_surface_format(available_formats, format_count);
-    VkPresentModeKHR present_mode = choose_present_mode(available_present_modes, mode_count);
-    VkExtent2D swap_extent = choose_swap_extent(self->window, surface_capabilities);
-    uint32_t min_image_count = choose_swap_min_image_count(surface_capabilities);
-
-    VkSwapchainCreateInfoKHR swap_chain_info = {
-        .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
-        .surface = self->surface,
-        .minImageCount = min_image_count,
-        .imageFormat = swap_format.format,
-        .imageColorSpace = swap_format.colorSpace,
-        .imageExtent = swap_extent, 
-        .imageArrayLayers = 1,
-        .imageUsage =  VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, 
-        .imageSharingMode = VK_SHARING_MODE_EXCLUSIVE,
-        .preTransform = surface_capabilities->currentTransform,
-        .compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
-        .presentMode = present_mode,
-        .clipped = true,
-    };
-    swap_chain_info.oldSwapchain = NULL;
-    
-    if (vkCreateSwapchainKHR(self->logical_device, &swap_chain_info, NULL, &self->swap_chain) != VK_SUCCESS) {
-        fprintf_s(stderr, "Failed to create swap_chain!");
-        exit(EXIT_FAILURE);
-    }
-
-    
-    vkGetSwapchainImagesKHR(self->logical_device, self->swap_chain, &self->swap_chain_image_count, NULL);
-    self->swap_chain_images = calloc(self->swap_chain_image_count, sizeof(VkImage));
-    if (vkGetSwapchainImagesKHR(self->logical_device, self->swap_chain, &self->swap_chain_image_count, self->swap_chain_images) != VK_SUCCESS) {
-        fprintf_s(stderr, "Failed to grab swap chain images!");
-        exit(EXIT_FAILURE);
-    }
- 
-    self->swap_chain_surface_format = swap_format;
-    self->swap_chain_extent = swap_extent;
-
-    free(available_formats);
-    free(surface_capabilities);
-    free(available_present_modes);
-}
-
-
-
-VkSurfaceFormatKHR choose_swap_surface_format(VkSurfaceFormatKHR* available_formats, uint32_t items) {
-    VkSurfaceFormatKHR* format_preferred = NULL;
-    for (int i = 0; i < items; i++) {
-        VkSurfaceFormatKHR f = available_formats[i];
-        if (f.format == VK_FORMAT_R8G8B8A8_SRGB && f.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)  {
-            format_preferred = &f;
-            break;
-        }
-    }
-    
-    return format_preferred == NULL ? available_formats[0] : *format_preferred;
-}
-
-
-VkPresentModeKHR choose_present_mode(VkPresentModeKHR* available_modes, uint32_t items) {
-    VkPresentModeKHR* mode_preferred = NULL;
-    for (int i = 0; i < items; i++) {
-        if (available_modes[i] == VK_PRESENT_MODE_MAILBOX_KHR) {
-            mode_preferred = &available_modes[i];
-        }
-    }
-    return mode_preferred == NULL ? VK_PRESENT_MODE_FIFO_KHR : *mode_preferred;
-}
-
-
-VkExtent2D choose_swap_extent(GLFWwindow* window, VkSurfaceCapabilitiesKHR *capabilities) {
-    VkSurfaceCapabilitiesKHR c = *capabilities;
-    if (c.currentExtent.width !=  UINT32_MAX) {
-        return c.currentExtent;
-    }
-    
-    int width, height;
-    glfwGetFramebufferSize(window, &width, &height);
-    VkExtent2D extent = {clamp(width, c.minImageExtent.width, c.maxImageExtent.width), 
-                         clamp(height, c.minImageExtent.height, c.maxImageExtent.width)};
-    return extent;
-}
-
-
-uint32_t choose_swap_min_image_count(VkSurfaceCapabilitiesKHR* capabilities) {
-    uint32_t min_image_count = max(3u, capabilities->minImageCount);
-    if ((0 < capabilities->maxImageCount) && capabilities->maxImageCount < min_image_count) {
-        min_image_count = capabilities->maxImageCount;
-    }
-    return min_image_count;
-}
-
-
-void _create_image_views(struct App* self) {
-    VkImageViewCreateInfo image_view_create_info = {
-        .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-        .viewType = VK_IMAGE_VIEW_TYPE_2D,
-        .format = self->swap_chain_surface_format.format,
-        .subresourceRange = {
-            VK_IMAGE_ASPECT_COLOR_BIT, 
-            .levelCount = 1,
-            .layerCount = 1}
-    };
-
-    self->swap_chain_image_views = calloc(self->swap_chain_image_count, sizeof(VkImageView));
-    for (int i = 0; i < self->swap_chain_image_count; i++) {
-        image_view_create_info.image = self->swap_chain_images[i];
-        vkCreateImageView(self->logical_device, &image_view_create_info, NULL, &self->swap_chain_image_views[i]);
-    }
+void destroy_app(struct App* a) {
+    free(a);
 }
