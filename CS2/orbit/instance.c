@@ -1,0 +1,103 @@
+#include <stdint.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+
+#include "vulkan/vulkan_core.h"
+#include "app.h"
+#include "validate.h"
+
+void _create_instance(struct App* self);
+void _get_required_instance_extensions(struct App* self);
+void check_extensions(const char** glfw_extensions, int glfw_extension_count, bool log);
+
+
+void _create_instance(struct App* self) {
+    check_validation_layers();
+
+    VkApplicationInfo app_info = {.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO, 
+                                  .pApplicationName = "Hello Triangle",
+                                  .applicationVersion = VK_MAKE_VERSION(1, 0, 1), 
+                                  .pEngineName = "No Engine",
+                                  .engineVersion = VK_MAKE_VERSION(1, 0, 0), .apiVersion = VK_API_VERSION_1_4};
+
+    _get_required_instance_extensions(self);
+    struct extension_info extension_info = self->extensions;
+    check_extensions(extension_info.extension_names, extension_info.extension_count, self->log);
+    VkInstanceCreateInfo create_info = {.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO, 
+                                        .pApplicationInfo = &app_info,
+                                        .enabledExtensionCount = extension_info.extension_count, 
+                                        .ppEnabledExtensionNames = extension_info.extension_names,
+                                        .enabledLayerCount = 1, 
+                                        .ppEnabledLayerNames = enable_validation_layers ? validation_layers : NULL
+                                    };
+    
+    if (vkCreateInstance(&create_info, NULL, &(self->instance)) != VK_SUCCESS) {
+        perror("Error: ");
+        exit(EXIT_FAILURE);
+    }
+}
+
+
+void _get_required_instance_extensions(struct App* self) {
+    uint32_t glfw_extension_count = 0;
+    const char** glfw_extensions = glfwGetRequiredInstanceExtensions(&glfw_extension_count);
+
+    uint32_t total_extension_count = glfw_extension_count + 1; 
+    if (enable_validation_layers) {
+        total_extension_count += 1;
+    }
+
+    const char** extensions = calloc(total_extension_count, sizeof(char*));
+    for (uint32_t i = 0; i < glfw_extension_count; i++) {
+        extensions[i] = glfw_extensions[i];
+    }
+    extensions[glfw_extension_count] = VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME;
+    if (enable_validation_layers) {
+        extensions[glfw_extension_count + 1] = VK_EXT_DEBUG_UTILS_EXTENSION_NAME;
+    }
+
+    self->extensions.extension_count = total_extension_count;
+    self->extensions.extension_names = extensions;
+}
+
+
+void check_extensions(const char** glfw_extensions, int glfw_extension_count, bool log) { // TODO: PASS EXTENSIONS BACK OUT
+    uint32_t extension_count = 0;
+    vkEnumerateInstanceExtensionProperties(NULL, &extension_count, NULL);
+
+    VkExtensionProperties* extensions = malloc(extension_count * sizeof(VkExtensionProperties));
+    vkEnumerateInstanceExtensionProperties(NULL, &extension_count, extensions);
+
+    if (log) {
+        printf("%d extensions installed: \n", extension_count);
+        for(int i = 0; i < extension_count; i++) {
+            printf("\t%s\n", extensions[i].extensionName);
+        }
+    }
+
+    if (log) {
+        printf("\n%d extensions needed for GLFW, physical devices%s: \n", glfw_extension_count, enable_validation_layers ? " and validation layers" : "");
+    }
+    bool missing_any = false;
+    for (int i = 0; i < glfw_extension_count; i++) {
+        bool in_extensions = false;
+
+        for (int j = 0; j < extension_count; j++) {
+            in_extensions = in_extensions || strcmp(glfw_extensions[i], extensions[j].extensionName) == 0;
+        }
+
+        if (log) {
+            printf("\t%s: %s\n", glfw_extensions[i], (in_extensions ? "Installed" : "Missing"));
+
+        }
+        missing_any = missing_any || !in_extensions;
+    }
+
+    if (missing_any) {
+        fprintf_s(stderr, "Missing GLFW extensions!\n");
+        exit(EXIT_FAILURE);
+    }
+
+    free(extensions);
+}

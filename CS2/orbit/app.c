@@ -1,50 +1,17 @@
-#include "vulkan/vulkan_core.h"
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
 
 #include <stdio.h>
-#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdbool.h>
 
+#include "app.h"
 #include "validate.c"
+#include "instance.c"
 
-
-struct extension_info {
-    uint32_t extension_count;
-    const char** extension_names;
-};
-
-struct App {
-    uint32_t WIDTH;
-    uint32_t HEIGHT;
-    bool log;
-
-    void (*run)(struct App* self);
-    struct extension_info extensions;
-    GLFWwindow* window;
-    VkInstance instance;
-    VkDebugUtilsMessengerEXT debug_messenger;
-    VkSurfaceKHR surface;
-    VkPhysicalDevice physical_device;
-    VkDevice logical_device;
-    VkQueue queue;
-    VkSwapchainKHR swap_chain;
-    VkImage* swap_chain_images;
-    uint32_t swap_chain_image_count;
-    VkSurfaceFormatKHR swap_chain_surface_format;
-    VkExtent2D swap_chain_extent;
-    VkImageView* swap_chain_image_views;
-};
 
 void _init_window(struct App* self);
 void _init_vulkan(struct App* self);
 void _main_loop(struct App* self);
 void _clean_up(struct App* self);
-void _create_instance(struct App* self);
-void _get_required_instance_extensions(struct App* self);
-void _setup_debug_messenger(struct App* self);
 void _create_surface(struct App* self);
 void _pick_physical_device(struct App* self);
 void _create_logical_device(struct App* self);
@@ -58,8 +25,8 @@ VkPresentModeKHR choose_present_mode(VkPresentModeKHR* available_modes, uint32_t
 VkExtent2D choose_swap_extent(GLFWwindow* window, VkSurfaceCapabilitiesKHR *capabilities);uint32_t choose_swap_min_image_count(VkSurfaceCapabilitiesKHR* capabilities);
 uint32_t choose_swap_min_image_count(VkSurfaceCapabilitiesKHR* capabilities);
 
-
 #define clamp(d, min, max) (d < min ? min : d) > max ? max : (d < min ? min : d)
+
 
 void _init_window(struct App* self) {
     glfwInit();
@@ -103,91 +70,6 @@ void _clean_up(struct App* self) {
     glfwDestroyWindow(self->window);
     glfwTerminate();
     free(self->extensions.extension_names);
-}
-
-
-void _create_instance(struct App* self) {
-    check_validation_layers();
-
-    VkApplicationInfo app_info = {.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO, 
-                                  .pApplicationName = "Hello Triangle",
-                                  .applicationVersion = VK_MAKE_VERSION(1, 0, 1), 
-                                  .pEngineName = "No Engine",
-                                  .engineVersion = VK_MAKE_VERSION(1, 0, 0), .apiVersion = VK_API_VERSION_1_4};
-
-    _get_required_instance_extensions(self);
-    struct extension_info extension_info = self->extensions;
-    check_extensions(extension_info.extension_names, extension_info.extension_count, self->log);
-    VkInstanceCreateInfo create_info = {.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO, 
-                                        .pApplicationInfo = &app_info,
-                                        .enabledExtensionCount = extension_info.extension_count, 
-                                        .ppEnabledExtensionNames = extension_info.extension_names,
-                                        .enabledLayerCount = 1, 
-                                        .ppEnabledLayerNames = enable_validation_layers ? validation_layers : NULL
-                                    };
-    
-    if (vkCreateInstance(&create_info, NULL, &(self->instance)) != VK_SUCCESS) {
-        perror("Error: ");
-        exit(EXIT_FAILURE);
-    }
-}
-
-
-void _get_required_instance_extensions(struct App* self) {
-    uint32_t glfw_extension_count = 0;
-    const char** glfw_extensions = glfwGetRequiredInstanceExtensions(&glfw_extension_count);
-
-    uint32_t total_extension_count = glfw_extension_count + 1; 
-    if (enable_validation_layers) {
-        total_extension_count += 1;
-    }
-
-    const char** extensions = calloc(total_extension_count, sizeof(char*));
-    for (uint32_t i = 0; i < glfw_extension_count; i++) {
-        extensions[i] = glfw_extensions[i];
-    }
-    extensions[glfw_extension_count] = VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME;
-    if (enable_validation_layers) {
-        extensions[glfw_extension_count + 1] = VK_EXT_DEBUG_UTILS_EXTENSION_NAME;
-    }
-
-    self->extensions.extension_count = total_extension_count;
-    self->extensions.extension_names = extensions;
-}
-
-
-void _setup_debug_messenger(struct App* self) {
-    if (!enable_validation_layers) return;
-
-    LOAD_INSTANCE_EXT(self->instance, vkCreateDebugUtilsMessengerEXT);
-
-    if (vkCreateDebugUtilsMessengerEXT == NULL) {
-        fprintf_s(stderr, "Missing validation layers.\n");
-        exit(EXIT_FAILURE);
-    }
-
-    VkDebugUtilsMessageSeverityFlagsEXT severity_flags = VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | 
-                                                         VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT |
-                                                         VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT ; 
-
-    VkDebugUtilsMessageTypeFlagsEXT message_type_flags = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | 
-                                                         VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | 
-                                                         VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT | 
-                                                         VK_DEBUG_UTILS_MESSAGE_TYPE_DEVICE_ADDRESS_BINDING_BIT_EXT;
-
-    VkDebugUtilsMessengerCreateInfoEXT debug_utils_messenger_create_info_ext = {
-        .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT,
-        .messageSeverity = severity_flags,
-        .messageType = message_type_flags, 
-        .pfnUserCallback = &debug_callback
-    };
-
-
-    VkResult result = vkCreateDebugUtilsMessengerEXT(self->instance, &debug_utils_messenger_create_info_ext, NULL, &self->debug_messenger);
-    if (result != VK_SUCCESS) {
-        printf("Error: %d", VK_SUCCESS);
-        exit(EXIT_FAILURE);
-    }
 }
 
 

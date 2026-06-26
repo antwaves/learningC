@@ -1,21 +1,9 @@
-#include "vulkan/vulkan_core.h"
-#include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 
-#define LOAD_INSTANCE_EXT(instance, func_name) PFN_##func_name func_name = (PFN_##func_name)vkGetInstanceProcAddr(instance, #func_name); 
-
-
-const char* validation_layers[] = {"VK_LAYER_KHRONOS_validation", NULL}; // MUST end with null
-#ifdef NDEBUG 
-const bool enable_validation_layers = false;
-#else
-const bool enable_validation_layers = true;
-#endif
-
-void check_extensions(const char** glfw_extensions, int glfw_extension_count, bool log);
-void check_validation_layers();
+#include "app.h"
+#include "validate.h"
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT severity, \
                                                      VkDebugUtilsMessageTypeFlagsEXT type, \
@@ -25,47 +13,6 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(VkDebugUtilsMessageSeverity
         fprintf_s(stderr, "Validation Layer: type %u msg: %s\n\n", type, p_callback_data->pMessage);
     }
     return VK_FALSE;
-}
-
-
-void check_extensions(const char** glfw_extensions, int glfw_extension_count, bool log) { // TODO: PASS EXTENSIONS BACK OUT
-    uint32_t extension_count = 0;
-    vkEnumerateInstanceExtensionProperties(NULL, &extension_count, NULL);
-
-    VkExtensionProperties* extensions = malloc(extension_count * sizeof(VkExtensionProperties));
-    vkEnumerateInstanceExtensionProperties(NULL, &extension_count, extensions);
-
-    if (log) {
-        printf("%d extensions installed: \n", extension_count);
-        for(int i = 0; i < extension_count; i++) {
-            printf("\t%s\n", extensions[i].extensionName);
-        }
-    }
-
-    if (log) {
-        printf("\n%d extensions needed for GLFW, physical devices%s: \n", glfw_extension_count, enable_validation_layers ? " and validation layers" : "");
-    }
-    bool missing_any = false;
-    for (int i = 0; i < glfw_extension_count; i++) {
-        bool in_extensions = false;
-
-        for (int j = 0; j < extension_count; j++) {
-            in_extensions = in_extensions || strcmp(glfw_extensions[i], extensions[j].extensionName) == 0;
-        }
-
-        if (log) {
-            printf("\t%s: %s\n", glfw_extensions[i], (in_extensions ? "Installed" : "Missing"));
-
-        }
-        missing_any = missing_any || !in_extensions;
-    }
-
-    if (missing_any) {
-        fprintf_s(stderr, "Missing GLFW extensions!\n");
-        exit(EXIT_FAILURE);
-    }
-
-    free(extensions);
 }
 
 
@@ -94,4 +41,40 @@ void check_validation_layers() {
     }
 
     free(layers);
+}
+
+
+
+void _setup_debug_messenger(struct App* self) {
+    if (!enable_validation_layers) return;
+
+    LOAD_INSTANCE_EXT(self->instance, vkCreateDebugUtilsMessengerEXT);
+
+    if (vkCreateDebugUtilsMessengerEXT == NULL) {
+        fprintf_s(stderr, "Missing validation layers.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    VkDebugUtilsMessageSeverityFlagsEXT severity_flags = VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | 
+                                                         VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT |
+                                                         VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT ; 
+
+    VkDebugUtilsMessageTypeFlagsEXT message_type_flags = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | 
+                                                         VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | 
+                                                         VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT | 
+                                                         VK_DEBUG_UTILS_MESSAGE_TYPE_DEVICE_ADDRESS_BINDING_BIT_EXT;
+
+    VkDebugUtilsMessengerCreateInfoEXT debug_utils_messenger_create_info_ext = {
+        .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT,
+        .messageSeverity = severity_flags,
+        .messageType = message_type_flags, 
+        .pfnUserCallback = &debug_callback
+    };
+
+
+    VkResult result = vkCreateDebugUtilsMessengerEXT(self->instance, &debug_utils_messenger_create_info_ext, NULL, &self->debug_messenger);
+    if (result != VK_SUCCESS) {
+        printf("Error: %d", VK_SUCCESS);
+        exit(EXIT_FAILURE);
+    }
 }
