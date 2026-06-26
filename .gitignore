@@ -6,3 +6,5 @@ stb_image_write.h
 *.png
 *.csv
 include/
+glfw3.dll
+*.spv
