@@ -32,6 +32,7 @@ void _pick_physical_device(struct App* self);
 void _create_logical_device(struct App* self);
 void _create_swap_chain(struct App* self);
 void _create_image_views(struct App* self);
+void _create_graphics_pipeline(struct App* self);
 void run(struct App* self);
 
 void check_extensions(const char** glfw_extensions, int glfw_extension_count, bool log);
@@ -77,7 +78,7 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(VkDebugUtilsMessageSeverity
                                                      const VkDebugUtilsMessengerCallbackDataEXT* p_callback_data, \
                                                      void* p_user_data) {
     if (severity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
-        fprintf(stderr, "Validation Layer: type %u msg: %s\n\n", type, p_callback_data->pMessage);
+        fprintf_s(stderr, "Validation Layer: type %u msg: %s\n\n", type, p_callback_data->pMessage);
     }
     return VK_FALSE;
 }
@@ -219,7 +220,7 @@ void check_extensions(const char** glfw_extensions, int glfw_extension_count, bo
     }
 
     if (missing_any) {
-        fprintf(stderr, "Missing GLFW extensions!\n");
+        fprintf_s(stderr, "Missing GLFW extensions!\n");
         exit(EXIT_FAILURE);
     }
 
@@ -247,7 +248,7 @@ void check_validation_layers() {
     }
 
     if (!contains_all) {
-        fprintf(stderr, "Missing validation layers!\n");
+        fprintf_s(stderr, "Missing validation layers!\n");
         exit(EXIT_FAILURE);
     }
 
@@ -261,7 +262,7 @@ void _setup_debug_messenger(struct App* self) {
     LOAD_INSTANCE_EXT(self->instance, vkCreateDebugUtilsMessengerEXT);
 
     if (vkCreateDebugUtilsMessengerEXT == NULL) {
-        fprintf(stderr, "Missing validation layers.\n");
+        fprintf_s(stderr, "Missing validation layers.\n");
         exit(EXIT_FAILURE);
     }
 
@@ -292,7 +293,7 @@ void _setup_debug_messenger(struct App* self) {
 
 void _create_surface(struct App* self) {
     if (glfwCreateWindowSurface(self->instance, self->window, NULL, &self->surface) != 0) {
-        fprintf(stderr, "Failed to create window surface!");
+        fprintf_s(stderr, "Failed to create window surface!");
         exit(EXIT_FAILURE);
     }
 }
@@ -303,7 +304,7 @@ void _pick_physical_device(struct App* self) {
     vkEnumeratePhysicalDevices(self->instance, &device_count, NULL);
 
     if (device_count == 0) {
-        fprintf(stderr, "Failed to find GPU's with vulkan support");
+        fprintf_s(stderr, "Failed to find GPU's with vulkan support");
         exit(EXIT_FAILURE);
     }
 
@@ -318,7 +319,7 @@ void _pick_physical_device(struct App* self) {
     }
 
     if (self->physical_device == NULL) {
-        fprintf(stderr, "Failed to find a suitable GPU");
+        fprintf_s(stderr, "Failed to find a suitable GPU");
         exit(EXIT_FAILURE);
     }
 
@@ -399,7 +400,7 @@ void _create_logical_device(struct App* self) {
         }
     }
     if (!any_queues) {
-        fprintf(stderr, "Failed to find a suitable queue");
+        fprintf_s(stderr, "Failed to find a suitable queue");
         exit(EXIT_FAILURE);
     }
 
@@ -423,7 +424,7 @@ void _create_logical_device(struct App* self) {
                                              .enabledExtensionCount = ext_count, 
                                              .ppEnabledExtensionNames = required_device_extensions};    
     if (vkCreateDevice(self->physical_device, &device_create_info, NULL, &self->logical_device) != VK_SUCCESS) {
-        fprintf(stderr, "Failed to create logical device");
+        fprintf_s(stderr, "Failed to create logical device");
         exit(EXIT_FAILURE);
     }
     vkGetDeviceQueue(self->logical_device, queue_index, 0, &self->queue);
@@ -465,7 +466,7 @@ void _create_swap_chain(struct App* self) {
     swap_chain_info.oldSwapchain = NULL;
     
     if (vkCreateSwapchainKHR(self->logical_device, &swap_chain_info, NULL, &self->swap_chain) != VK_SUCCESS) {
-        fprintf(stderr, "Failed to create swap_chain!");
+        fprintf_s(stderr, "Failed to create swap_chain!");
         exit(EXIT_FAILURE);
     }
 
@@ -473,7 +474,7 @@ void _create_swap_chain(struct App* self) {
     vkGetSwapchainImagesKHR(self->logical_device, self->swap_chain, &self->swap_chain_image_count, NULL);
     self->swap_chain_images = calloc(self->swap_chain_image_count, sizeof(VkImage));
     if (vkGetSwapchainImagesKHR(self->logical_device, self->swap_chain, &self->swap_chain_image_count, self->swap_chain_images) != VK_SUCCESS) {
-        fprintf(stderr, "Failed to grab swap chain images!");
+        fprintf_s(stderr, "Failed to grab swap chain images!");
         exit(EXIT_FAILURE);
     }
  
@@ -553,6 +554,11 @@ void _create_image_views(struct App* self) {
     }
 }
 
+
+void _create_graphics_pipeline(struct App* self) {
+
+
+}
 
 struct App* init() {
     struct App* a = calloc(1, sizeof(struct App));
