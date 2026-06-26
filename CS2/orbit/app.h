@@ -34,6 +34,7 @@ struct App {
     VkSurfaceFormatKHR swap_chain_surface_format;
     VkExtent2D swap_chain_extent;
     VkImageView* swap_chain_image_views;
+    VkPipelineLayout pipeline_layout; 
 };
 
 #endif
