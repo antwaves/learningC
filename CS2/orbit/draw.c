@@ -5,5 +5,5 @@ int main() {
     app->run(app);
     destroy_app(app);
 
-    return EXIT_SUCCESS;
+    return 0;
 }

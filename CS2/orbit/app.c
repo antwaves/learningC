@@ -1,3 +1,4 @@
+#include "vulkan/vulkan_core.h"
 #include "app.h"
 #include "validate.c"
 #include "instance.c"
@@ -5,7 +6,7 @@
 #include "logical_device.c"
 #include "swap_chain.c"
 #include "graphics_pipeline.c"
-#include "vulkan/vulkan_core.h"
+#include "command_buffer.c"
 
 void _init_window(struct App* self);
 void _init_vulkan(struct App* self);
@@ -34,6 +35,8 @@ void _init_vulkan(struct App* self) {
     _create_swap_chain(self);
     _create_image_views(self);
     _create_graphics_pipeline(self);
+    _create_command_pool(self);
+    _create_command_buffer(self);
 }
 
 
@@ -45,10 +48,7 @@ void _main_loop(struct App* self) {
 
 
 void _clean_up(struct App* self) {
-    LOAD_INSTANCE_EXT(self->instance, vkDestroyDebugUtilsMessengerEXT)
-    if (vkDestroyDebugUtilsMessengerEXT != NULL) {
-        vkDestroyDebugUtilsMessengerEXT(self->instance, self->debug_messenger, NULL);
-    }
+    free(self->extensions.extension_names);
 
     vkDeviceWaitIdle(self->logical_device);
     for (int i = 0; i < self->swap_chain_image_count; i++) { vkDestroyImageView(self->logical_device, self->swap_chain_image_views[i], NULL); }
@@ -58,10 +58,14 @@ void _clean_up(struct App* self) {
     vkDestroyPipelineLayout(self->logical_device, self->pipeline_layout, NULL);
     vkDestroyPipeline(self->logical_device, self->graphics_pipeline, NULL);
     vkDestroyDevice(self->logical_device, NULL);
+    
+    LOAD_INSTANCE_EXT(self->instance, vkDestroyDebugUtilsMessengerEXT)
+    if (vkDestroyDebugUtilsMessengerEXT != NULL) {
+        vkDestroyDebugUtilsMessengerEXT(self->instance, self->debug_messenger, NULL);
+    }
     vkDestroyInstance(self->instance, NULL);
     glfwDestroyWindow(self->window);
     glfwTerminate();
-    free(self->extensions.extension_names);
 }
 
 

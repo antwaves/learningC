@@ -24,18 +24,24 @@ struct App {
     GLFWwindow* window;
     VkInstance instance;
     VkDebugUtilsMessengerEXT debug_messenger;
+
     VkSurfaceKHR surface;
     VkPhysicalDevice physical_device;
     VkDevice logical_device;
+    uint32_t queue_family_index;
     VkQueue queue;
+
     VkSwapchainKHR swap_chain;
     VkImage* swap_chain_images;
     uint32_t swap_chain_image_count;
     VkSurfaceFormatKHR swap_chain_surface_format;
     VkExtent2D swap_chain_extent;
     VkImageView* swap_chain_image_views;
+
     VkPipelineLayout pipeline_layout; 
     VkPipeline graphics_pipeline;
+    VkCommandPool command_pool;
+    VkCommandBuffer command_buffer;
 };
 
 #endif

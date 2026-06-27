@@ -30,6 +30,7 @@ void _create_logical_device(struct App* self) {
         exit(EXIT_FAILURE);
     }
 
+    self->queue_family_index = queue_index;
     float queue_priority = 0.5f;
     VkDeviceQueueCreateInfo device_queue_create_info = {.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
                                                         .queueFamilyIndex=queue_index, 
