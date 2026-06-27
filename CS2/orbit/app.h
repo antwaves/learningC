@@ -1,10 +1,8 @@
 #include "vulkan/vulkan_core.h"
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
-
 #include <stdint.h>
 #include <stdbool.h>
-
 
 #ifndef APP
 #define APP
@@ -42,6 +40,10 @@ struct App {
     VkPipeline graphics_pipeline;
     VkCommandPool command_pool;
     VkCommandBuffer command_buffer;
+
+    VkSemaphore present_complete_semaphore;
+    VkSemaphore render_complete_semaphore;
+    VkFence draw_fence;
 };
 
 #endif

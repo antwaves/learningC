@@ -7,6 +7,8 @@
 #include "swap_chain.c"
 #include "graphics_pipeline.c"
 #include "command_buffer.c"
+#include "draw_frame.c"
+
 
 void _init_window(struct App* self);
 void _init_vulkan(struct App* self);
@@ -37,12 +39,14 @@ void _init_vulkan(struct App* self) {
     _create_graphics_pipeline(self);
     _create_command_pool(self);
     _create_command_buffer(self);
+    _create_sync_objects(self);
 }
 
 
 void _main_loop(struct App* self) {
     while (!glfwWindowShouldClose(self->window)) {
         glfwPollEvents();
+        _draw_frame(self);
     }
 }
 
@@ -54,15 +58,20 @@ void _clean_up(struct App* self) {
     for (int i = 0; i < self->swap_chain_image_count; i++) { vkDestroyImageView(self->logical_device, self->swap_chain_image_views[i], NULL); }
     free(self->swap_chain_images);
     vkDestroySwapchainKHR(self->logical_device, self->swap_chain, NULL);
-    vkDestroySurfaceKHR(self->instance, self->surface, NULL);
     vkDestroyPipelineLayout(self->logical_device, self->pipeline_layout, NULL);
     vkDestroyPipeline(self->logical_device, self->graphics_pipeline, NULL);
-    vkDestroyDevice(self->logical_device, NULL);
+    vkDestroyCommandPool(self->logical_device, self->command_pool, NULL);
+    vkDestroySemaphore(self->logical_device, self->present_complete_semaphore, NULL);
+    vkDestroySemaphore(self->logical_device, self->render_complete_semaphore, NULL);
+    vkDestroyFence(self->logical_device, self->draw_fence, NULL);
     
+    vkDestroySurfaceKHR(self->instance, self->surface, NULL);
     LOAD_INSTANCE_EXT(self->instance, vkDestroyDebugUtilsMessengerEXT)
     if (vkDestroyDebugUtilsMessengerEXT != NULL) {
         vkDestroyDebugUtilsMessengerEXT(self->instance, self->debug_messenger, NULL);
     }
+
+    vkDestroyDevice(self->logical_device, NULL);
     vkDestroyInstance(self->instance, NULL);
     glfwDestroyWindow(self->window);
     glfwTerminate();

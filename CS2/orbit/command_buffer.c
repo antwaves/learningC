@@ -3,7 +3,7 @@
 
 void _create_command_pool(struct App* self);
 void _create_command_buffer(struct App* self);
-void record_command_buffer(struct App* self, uint32_t image_index);
+void _record_command_buffer(struct App* self, uint32_t image_index);
 void _transition_image_layout(struct App* self, uint32_t image_index, VkImageLayout old_layout, 
                               VkImageLayout new_layout, VkAccessFlags2 src_access_mask, 
                               VkAccessFlags2 dst_access_mask, VkPipelineStageFlags2 src_stage_mask, 
@@ -35,7 +35,7 @@ void _create_command_buffer(struct App* self) {
 }
 
 
-void record_command_buffer(struct App* self, uint32_t image_index) {
+void _record_command_buffer(struct App* self, uint32_t image_index) {
     VkCommandBufferBeginInfo vk_command_buffer_begin_info = {
         .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO
     };
