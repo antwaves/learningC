@@ -15,7 +15,7 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(VkDebugUtilsMessageSeverity
                                                      const VkDebugUtilsMessengerCallbackDataEXT* p_callback_data, \
                                                      void* p_user_data) {
     if (severity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
-        fprintf_s(stderr, "Validation Layer: type %u msg: %s\n\n", type, p_callback_data->pMessage);
+        fprintf_s(stderr, "\nValidation Layer: type %u msg: %s\n\n", type, p_callback_data->pMessage);
     }
     return VK_FALSE;
 }

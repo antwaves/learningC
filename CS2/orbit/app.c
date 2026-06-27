@@ -56,6 +56,7 @@ void _clean_up(struct App* self) {
     vkDestroySwapchainKHR(self->logical_device, self->swap_chain, NULL);
     vkDestroySurfaceKHR(self->instance, self->surface, NULL);
     vkDestroyPipelineLayout(self->logical_device, self->pipeline_layout, NULL);
+    vkDestroyPipeline(self->logical_device, self->graphics_pipeline, NULL);
     vkDestroyDevice(self->logical_device, NULL);
     vkDestroyInstance(self->instance, NULL);
     glfwDestroyWindow(self->window);
