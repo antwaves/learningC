@@ -30,8 +30,12 @@ void _create_graphics_pipeline(struct App* self) {
     VkPipelineShaderStageCreateInfo shader_stages[] = {vert_shader_stage_info, frag_shader_stage_info};
     
     VkDynamicState dynamic_states[] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
-    VkPipelineDynamicStateCreateInfo dynamic_state = {.dynamicStateCount = sizeof(dynamic_state) / sizeof(uint32_t), .pDynamicStates = dynamic_states, .sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO};
-    VkPipelineVertexInputStateCreateInfo vertexInputInfo;
+    VkPipelineDynamicStateCreateInfo dynamic_state = {
+        .dynamicStateCount = sizeof(dynamic_state) / sizeof(uint32_t), 
+        .pDynamicStates = dynamic_states, 
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO
+    };
+    VkPipelineVertexInputStateCreateInfo vertex_input_info;
     VkPipelineInputAssemblyStateCreateInfo input_assembly = {.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, .sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO};
     VkPipelineViewportStateCreateInfo  viewport_state = {.viewportCount = 1, .scissorCount = 1, .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO};
     VkPipelineRasterizationStateCreateInfo rasterizer = {
@@ -73,6 +77,31 @@ void _create_graphics_pipeline(struct App* self) {
     };
     vkCreatePipelineLayout(self->logical_device, &pipeline_layout_info, NULL, &self->pipeline_layout);
 
+    VkPipelineRenderingCreateInfo pipeline_rendering_create_info = {
+        .colorAttachmentCount = 1,
+        .pColorAttachmentFormats = &self->swap_chain_surface_format.format,
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO,
+        .pNext = NULL
+    };
+    VkGraphicsPipelineCreateInfo graphics_pipeline_create_info_chain = {
+        .stageCount = 2,
+        .pStages = shader_stages,
+        .pVertexInputState = &vertex_input_info,
+        .pInputAssemblyState = &input_assembly,
+        .pViewportState = &viewport_state,
+        .pRasterizationState = &rasterizer,
+        .pMultisampleState = &multisampling,
+        .pColorBlendState = &color_blending,
+        .pDynamicState = &dynamic_state,
+        .layout = self->pipeline_layout,
+        .renderPass = NULL,
+        .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
+        .pNext = &pipeline_rendering_create_info
+    };
+
+    vkCreateGraphicsPipelines(self->logical_device, NULL, 2, &graphics_pipeline_create_info_chain, NULL, &self->graphics_pipeline);
+
+    vkDestroyShaderModule(self->logical_device, module, NULL);
     free(shader_bytes);
 }
 

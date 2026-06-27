@@ -5,6 +5,7 @@
 #include "logical_device.c"
 #include "swap_chain.c"
 #include "graphics_pipeline.c"
+#include "vulkan/vulkan_core.h"
 
 void _init_window(struct App* self);
 void _init_vulkan(struct App* self);
@@ -54,6 +55,7 @@ void _clean_up(struct App* self) {
     free(self->swap_chain_images);
     vkDestroySwapchainKHR(self->logical_device, self->swap_chain, NULL);
     vkDestroySurfaceKHR(self->instance, self->surface, NULL);
+    vkDestroyPipelineLayout(self->logical_device, self->pipeline_layout, NULL);
     vkDestroyDevice(self->logical_device, NULL);
     vkDestroyInstance(self->instance, NULL);
     glfwDestroyWindow(self->window);

@@ -35,6 +35,7 @@ struct App {
     VkExtent2D swap_chain_extent;
     VkImageView* swap_chain_image_views;
     VkPipelineLayout pipeline_layout; 
+    VkPipeline graphics_pipeline;
 };
 
 #endif
