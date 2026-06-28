@@ -56,7 +56,7 @@ static bool is_device_suitable(VkPhysicalDevice* device) {
     }
 
     bool has_needed_extensions = true;
-    char *required_device_extensions[] = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+    char *required_device_extensions[] = {VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME};
     uint32_t elms = sizeof(required_device_extensions) / sizeof(char*);
     uint32_t available_ext_count = 0;
     vkEnumerateDeviceExtensionProperties(*device, NULL, &available_ext_count, NULL);
@@ -72,10 +72,10 @@ static bool is_device_suitable(VkPhysicalDevice* device) {
 
     VkPhysicalDeviceExtendedDynamicStateFeaturesEXT dynamic_features = {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT, .pNext = NULL, .extendedDynamicState=true};
     VkPhysicalDeviceVulkan11Features vulkan11_features = {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES, .pNext = &dynamic_features, .shaderDrawParameters=true};
-    VkPhysicalDeviceVulkan13Features vulkan13_features = {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES, .pNext = &vulkan11_features, .dynamicRendering=true};  
+    VkPhysicalDeviceVulkan13Features vulkan13_features = {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES, .pNext = &vulkan11_features, .dynamicRendering=true, .synchronization2=true};  
     VkPhysicalDeviceFeatures2 feature_chain = {.sType=VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2, .pNext =&vulkan13_features};
     vkGetPhysicalDeviceFeatures2(*device, &feature_chain);
-    bool has_needed_features = vulkan11_features.shaderDrawParameters && vulkan13_features.dynamicRendering && dynamic_features.extendedDynamicState;
+    bool has_needed_features = vulkan11_features.shaderDrawParameters && vulkan13_features.dynamicRendering && dynamic_features.extendedDynamicState && vulkan13_features.synchronization2;
 
     is_suitable = supports_vulkan1_3 && supports_graphics && has_needed_extensions && has_needed_features;
 

@@ -1,5 +1,7 @@
 #include "app.h"
+#include "validate.h"
 #include "vulkan/vulkan_core.h"
+
 
 void _create_command_pool(struct App* self);
 void _create_command_buffer(struct App* self);
@@ -61,7 +63,8 @@ void _record_command_buffer(struct App* self, uint32_t image_index) {
         .imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
         .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
         .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
-        .clearValue = clear_color
+        .clearValue = clear_color,
+        .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO
     };
     VkRenderingInfo rendering_info = {
         .renderArea = {
@@ -70,7 +73,8 @@ void _record_command_buffer(struct App* self, uint32_t image_index) {
         },
         .layerCount = 1,
         .colorAttachmentCount = 1,
-        .pColorAttachments = &attachment_info
+        .pColorAttachments = &attachment_info,
+        .sType = VK_STRUCTURE_TYPE_RENDERING_INFO
     };
 
     //render commands
@@ -130,5 +134,6 @@ void _transition_image_layout(struct App* self, uint32_t image_index, VkImageLay
         .pImageMemoryBarriers = &barrier,
         .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO
     };
+
     vkCmdPipelineBarrier2(self->command_buffer, &dependency_info);
 }

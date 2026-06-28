@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdio.h>
+#include "validate.h"
 
 #include "app.h"
 #include "command_buffer.h"
@@ -43,6 +44,7 @@ void _draw_frame(struct App* self) {
         .swapchainCount = 1,
         .pSwapchains = &self->swap_chain,
         .pImageIndices = &image_index,
+        .pResults = NULL,
         .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR
     };
     vkQueuePresentKHR(self->queue, &present_info_KHR);

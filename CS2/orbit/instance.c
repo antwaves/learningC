@@ -18,9 +18,9 @@ void _create_instance(struct App* self) {
 
     VkApplicationInfo app_info = {.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO, 
                                   .pApplicationName = "Hello Triangle",
-                                  .applicationVersion = VK_MAKE_VERSION(1, 0, 1), 
+                                  .applicationVersion = VK_MAKE_VERSION(1, 0, 3), 
                                   .pEngineName = "No Engine",
-                                  .engineVersion = VK_MAKE_VERSION(1, 0, 0), .apiVersion = VK_API_VERSION_1_4};
+                                  .engineVersion = VK_MAKE_VERSION(1, 0, 3), .apiVersion = VK_API_VERSION_1_4};
 
     _get_required_instance_extensions(self);
     struct extension_info extension_info = self->extensions;
