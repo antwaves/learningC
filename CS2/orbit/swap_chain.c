@@ -1,15 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "app.h"
+#include "vulkan/vulkan_core.h"
 
-void _create_swap_chain(struct App* self);
-void _create_image_views(struct App* self);
-void _create_graphics_pipeline(struct App* self);
-
-static VkSurfaceFormatKHR choose_swap_surface_format(VkSurfaceFormatKHR* available_formats, uint32_t items);
-static VkPresentModeKHR choose_present_mode(VkPresentModeKHR* available_modes, uint32_t items);
-static VkExtent2D choose_swap_extent(GLFWwindow* window, VkSurfaceCapabilitiesKHR *capabilities);uint32_t choose_swap_min_image_count(VkSurfaceCapabilitiesKHR* capabilities);
-static uint32_t choose_swap_min_image_count(VkSurfaceCapabilitiesKHR* capabilities);
+#include "swap_chain.h"
 
 #define clamp(d, min, max) (d < min ? min : d) > max ? max : (d < min ? min : d)
 
@@ -45,14 +39,13 @@ void _create_swap_chain(struct App* self) {
         .compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
         .presentMode = present_mode,
         .clipped = true,
-    };
-    swap_chain_info.oldSwapchain = NULL;
+        .oldSwapchain = self->swap_chain
+    };    
     
     if (vkCreateSwapchainKHR(self->logical_device, &swap_chain_info, NULL, &self->swap_chain) != VK_SUCCESS) {
         fprintf_s(stderr, "Failed to create swap_chain!");
         exit(EXIT_FAILURE);
     }
-
     
     vkGetSwapchainImagesKHR(self->logical_device, self->swap_chain, &self->swap_chain_image_count, NULL);
     self->swap_chain_images = calloc(self->swap_chain_image_count, sizeof(VkImage));
@@ -68,7 +61,6 @@ void _create_swap_chain(struct App* self) {
     free(surface_capabilities);
     free(available_present_modes);
 }
-
 
 
 static VkSurfaceFormatKHR choose_swap_surface_format(VkSurfaceFormatKHR* available_formats, uint32_t items) {
@@ -135,4 +127,28 @@ void _create_image_views(struct App* self) {
         image_view_create_info.image = self->swap_chain_images[i];
         vkCreateImageView(self->logical_device, &image_view_create_info, NULL, &self->swap_chain_image_views[i]);
     }
+}
+
+
+void _cleanup_swap_chain(struct App *self) {
+    vkDeviceWaitIdle(self->logical_device);
+    for (int i = 0; i < self->swap_chain_image_count; i++) { vkDestroyImageView(self->logical_device, self->swap_chain_image_views[i], NULL); }
+    free(self->swap_chain_images);
+    vkDestroySwapchainKHR(self->logical_device, self->swap_chain, NULL);
+    self->swap_chain = NULL;
+}
+
+
+void _recreate_swap_chain(struct App* self) {
+    int width = 0, height = 0;
+    glfwGetFramebufferSize(self->window, &width, &height);
+    while (width == 0 || height == 0) {
+        glfwGetFramebufferSize(self->window, &width, &height);
+        glfwWaitEvents();
+    }
+
+    vkDeviceWaitIdle(self->logical_device);
+    _cleanup_swap_chain(self);
+    _create_swap_chain(self);
+    _create_image_views(self);
 }

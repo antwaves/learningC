@@ -1,9 +1,11 @@
+#define GLFW_INCLUDE_VULKAN
+#include <GLFW/glfw3.h>
+
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 
-#include "vulkan/vulkan_core.h"
 #include "app.h"
 #include "validate.h"
 
@@ -11,7 +13,6 @@ void _create_instance(struct App* self);
 static void _get_required_instance_extensions(struct App* self);
 static void check_extensions(const char** glfw_extensions, int glfw_extension_count, bool log);
 void _create_surface(struct App* self);
-
 
 void _create_instance(struct App* self) {
     check_validation_layers();

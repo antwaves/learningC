@@ -1,6 +1,6 @@
-#include "vulkan/vulkan_core.h"
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
+#include "vulkan/vulkan_core.h"
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -13,8 +13,8 @@ struct extension_info {
 };
 
 struct App {
-    uint32_t WIDTH;
-    uint32_t HEIGHT;
+    uint32_t width;
+    uint32_t height;
     bool log;
 
     void (*run)(struct App* self);
@@ -35,6 +35,7 @@ struct App {
     VkSurfaceFormatKHR swap_chain_surface_format;
     VkExtent2D swap_chain_extent;
     VkImageView* swap_chain_image_views;
+    bool frame_buffer_resized;
 
     VkPipelineLayout pipeline_layout; 
     VkPipeline graphics_pipeline;

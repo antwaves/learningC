@@ -1,3 +1,6 @@
+#define GLFW_INCLUDE_VULKAN
+#include <GLFW/glfw3.h>
+
 #include "vulkan/vulkan_core.h"
 #include "app.h"
 #include "validate.c"
@@ -23,8 +26,11 @@ void destroy_app(struct App* a);
 void _init_window(struct App* self) {
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-    self->window = glfwCreateWindow(self->WIDTH, self->HEIGHT, "Vulkan", NULL, NULL);
+    glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
+
+    self->window = glfwCreateWindow(self->width, self->height, "Vulkan", NULL, NULL);
+    glfwSetWindowUserPointer(self->window, self);
+    glfwSetFramebufferSizeCallback(self->window, framebuffer_resize_callback);
 }
 
 
@@ -55,9 +61,7 @@ void _clean_up(struct App* self) {
     free(self->extensions.extension_names);
 
     vkDeviceWaitIdle(self->logical_device);
-    for (int i = 0; i < self->swap_chain_image_count; i++) { vkDestroyImageView(self->logical_device, self->swap_chain_image_views[i], NULL); }
-    free(self->swap_chain_images);
-    vkDestroySwapchainKHR(self->logical_device, self->swap_chain, NULL);
+    _cleanup_swap_chain(self);
     vkDestroyPipelineLayout(self->logical_device, self->pipeline_layout, NULL);
     vkDestroyPipeline(self->logical_device, self->graphics_pipeline, NULL);
     free(self->command_buffers);
@@ -99,8 +103,8 @@ void run(struct App* self) {
 struct App* init() {
     struct App app = {
         .run = run,
-        .WIDTH = 800,
-        .HEIGHT = 600,
+        .width = 800,
+        .height = 600,
         .log = true,
         .MAX_FRAMES_IN_FLIGHT = 2
     };
