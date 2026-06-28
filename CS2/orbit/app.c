@@ -38,7 +38,7 @@ void _init_vulkan(struct App* self) {
     _create_image_views(self);
     _create_graphics_pipeline(self);
     _create_command_pool(self);
-    _create_command_buffer(self);
+    _create_command_buffers(self);
     _create_sync_objects(self);
 }
 
@@ -60,10 +60,20 @@ void _clean_up(struct App* self) {
     vkDestroySwapchainKHR(self->logical_device, self->swap_chain, NULL);
     vkDestroyPipelineLayout(self->logical_device, self->pipeline_layout, NULL);
     vkDestroyPipeline(self->logical_device, self->graphics_pipeline, NULL);
+    free(self->command_buffers);
     vkDestroyCommandPool(self->logical_device, self->command_pool, NULL);
-    vkDestroySemaphore(self->logical_device, self->present_complete_semaphore, NULL);
-    vkDestroySemaphore(self->logical_device, self->render_complete_semaphore, NULL);
-    vkDestroyFence(self->logical_device, self->draw_fence, NULL);
+
+    for (size_t i = 0; i < self->MAX_FRAMES_IN_FLIGHT; i++) {
+        vkDestroySemaphore(self->logical_device, self->present_complete_semaphores[i], NULL);
+        vkDestroyFence(self->logical_device, self->in_flight_fences[i], NULL);
+    }
+    free(self->present_complete_semaphores);
+    free(self->in_flight_fences);
+
+    for (size_t i = 0; i < self->swap_chain_image_count; i++) {
+        vkDestroySemaphore(self->logical_device, self->render_complete_semaphores[i], NULL);
+    }
+    free(self->render_complete_semaphores);
     
     vkDestroySurfaceKHR(self->instance, self->surface, NULL);
     LOAD_INSTANCE_EXT(self->instance, vkDestroyDebugUtilsMessengerEXT)
@@ -87,11 +97,15 @@ void run(struct App* self) {
 
 
 struct App* init() {
-    struct App* a = calloc(1, sizeof(struct App));
-    a->run = run;
-    a->WIDTH = 800;
-    a->HEIGHT = 600;
-    a->log = true;
+    struct App app = {
+        .run = run,
+        .WIDTH = 800,
+        .HEIGHT = 600,
+        .log = true,
+        .MAX_FRAMES_IN_FLIGHT = 2
+    };
+    struct App* a = calloc(1, sizeof(app));
+    memcpy(a, &app, sizeof(app));
     return a;
 }
 

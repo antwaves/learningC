@@ -105,7 +105,6 @@ void _create_graphics_pipeline(struct App* self) {
     };
 
     vkCreateGraphicsPipelines(self->logical_device, NULL, 1, graphics_pipeline_create_info_chain, NULL, &self->graphics_pipeline);
-
     vkDestroyShaderModule(self->logical_device, module, NULL);
     free(shader_bytes);
 }

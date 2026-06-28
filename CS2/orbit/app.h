@@ -39,11 +39,13 @@ struct App {
     VkPipelineLayout pipeline_layout; 
     VkPipeline graphics_pipeline;
     VkCommandPool command_pool;
-    VkCommandBuffer command_buffer;
 
-    VkSemaphore present_complete_semaphore;
-    VkSemaphore render_complete_semaphore;
-    VkFence draw_fence;
+    const uint32_t MAX_FRAMES_IN_FLIGHT;
+    uint32_t frame_index;
+    VkCommandBuffer* command_buffers;
+    VkSemaphore* present_complete_semaphores;
+    VkSemaphore* render_complete_semaphores;
+    VkFence* in_flight_fences;
 };
 
 #endif

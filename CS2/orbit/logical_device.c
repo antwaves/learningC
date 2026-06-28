@@ -30,6 +30,7 @@ void _create_logical_device(struct App* self) {
         fprintf_s(stderr, "Failed to find a suitable queue");
         exit(EXIT_FAILURE);
     }
+    free(queue_family_properties);
 
     self->queue_family_index = queue_index;
     float queue_priority = 0.5f;

@@ -1,10 +1,11 @@
 #include "app.h"
-#include "validate.h"
 #include "vulkan/vulkan_core.h"
 
+#include <stdio.h>
+#include <stdlib.h>
 
 void _create_command_pool(struct App* self);
-void _create_command_buffer(struct App* self);
+void _create_command_buffers(struct App* self);
 void _record_command_buffer(struct App* self, uint32_t image_index);
 void _transition_image_layout(struct App* self, uint32_t image_index, VkImageLayout old_layout, 
                               VkImageLayout new_layout, VkAccessFlags2 src_access_mask, 
@@ -22,18 +23,20 @@ void _create_command_pool(struct App* self) {
 }
 
 
-void _create_command_buffer(struct App* self) {
+void _create_command_buffers(struct App* self) {
     VkCommandBufferAllocateInfo alloc_info = {
         .commandPool = self->command_pool,
         .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY, 
-        .commandBufferCount = 1,
+        .commandBufferCount = self->MAX_FRAMES_IN_FLIGHT,
         .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO
     };
 
-    VkCommandBuffer buffers[1];
-    vkAllocateCommandBuffers(self->logical_device, &alloc_info, buffers);
-    VkCommandBuffer buffer = buffers[0];
-    self->command_buffer = buffer;
+    VkCommandBuffer* buffers = calloc(self->MAX_FRAMES_IN_FLIGHT, sizeof(VkCommandBuffer));
+    if (vkAllocateCommandBuffers(self->logical_device, &alloc_info, buffers) != VK_SUCCESS) {
+        fprintf(stderr, "Failed to create command buffers!");
+        exit(EXIT_FAILURE);
+    }
+    self->command_buffers = buffers;
 }
 
 
@@ -41,7 +44,7 @@ void _record_command_buffer(struct App* self, uint32_t image_index) {
     VkCommandBufferBeginInfo vk_command_buffer_begin_info = {
         .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO
     };
-    vkBeginCommandBuffer(self->command_buffer, &vk_command_buffer_begin_info); // start reading commands
+    vkBeginCommandBuffer(self->command_buffers[self->frame_index], &vk_command_buffer_begin_info); // start reading commands
 
     // before starting rendering, transition the swapchain image to vk::ImageLayout::eColorAttachmentOptimal
     _transition_image_layout(
@@ -78,16 +81,16 @@ void _record_command_buffer(struct App* self, uint32_t image_index) {
     };
 
     //render commands
-    vkCmdBeginRendering(self->command_buffer, &rendering_info);
-    vkCmdBindPipeline(self->command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, self->graphics_pipeline);
+    vkCmdBeginRendering(self->command_buffers[self->frame_index], &rendering_info);
+    vkCmdBindPipeline(self->command_buffers[self->frame_index], VK_PIPELINE_BIND_POINT_GRAPHICS, self->graphics_pipeline);
     VkViewport viewport[] = {{0.0f, 0.0f, (float)self->swap_chain_extent.width, (float)self->swap_chain_extent.height, 0.0f, 1.0f}};
-    vkCmdSetViewport(self->command_buffer, 0, 1, viewport);
+    vkCmdSetViewport(self->command_buffers[self->frame_index], 0, 1, viewport);
     VkRect2D scissor[] = {
         {{0, 0}, self->swap_chain_extent}
     };
-    vkCmdSetScissor(self->command_buffer, 0, 1, scissor);
-    vkCmdDraw(self->command_buffer, 3, 1, 0, 0);
-    vkCmdEndRendering(self->command_buffer);
+    vkCmdSetScissor(self->command_buffers[self->frame_index], 0, 1, scissor);
+    vkCmdDraw(self->command_buffers[self->frame_index], 3, 1, 0, 0);
+    vkCmdEndRendering(self->command_buffers[self->frame_index]);
 
     // after  rendering, transition the swapchain image to vk::ImageLayout::ePresentSrcKHR
     _transition_image_layout(
@@ -101,7 +104,7 @@ void _record_command_buffer(struct App* self, uint32_t image_index) {
         VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT
     );
 
-    vkEndCommandBuffer(self->command_buffer); // stop reading commands
+    vkEndCommandBuffer(self->command_buffers[self->frame_index]); // stop reading commands
 }
 
 
@@ -135,5 +138,5 @@ void _transition_image_layout(struct App* self, uint32_t image_index, VkImageLay
         .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO
     };
 
-    vkCmdPipelineBarrier2(self->command_buffer, &dependency_info);
+    vkCmdPipelineBarrier2(self->command_buffers[self->frame_index], &dependency_info);
 }
