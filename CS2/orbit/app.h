@@ -51,4 +51,9 @@ struct App {
     VkFence* in_flight_fences;  // makes the CPU wait to process the next image until the last one has finished presenting
 };
 
+
+void run(struct App* self);
+struct App* init();
+void destroy_app(struct App* a);
+
 #endif

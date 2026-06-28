@@ -1,11 +1,11 @@
 #include "GLFW/glfw3.h"
-#include "swap_chain.h"
 #include "vulkan/vulkan_core.h"
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdio.h>
 #include "app.h"
 #include "command_buffer.h"
+#include "swap_chain.h"
 
 void _draw_frame(struct App* self);
 void _create_sync_objects(struct App* self);
@@ -87,7 +87,7 @@ void _create_sync_objects(struct App* self) {
 }
 
 
-static void framebuffer_resize_callback(GLFWwindow* window, int width, int height) { // called when the window is resized, informs other functions
+void framebuffer_resize_callback(GLFWwindow* window, int width, int height) { // called when the window is resized, informs other functions
     struct App* self = (struct App*)(glfwGetWindowUserPointer(window));
     self->frame_buffer_resized = true;
     self->width = width;

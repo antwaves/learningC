@@ -13,16 +13,6 @@
 #include "draw_frame.c"
 
 
-void _init_window(struct App* self);
-void _init_vulkan(struct App* self);
-void _main_loop(struct App* self);
-void _clean_up(struct App* self);
-
-void run(struct App* self);
-struct App* init();
-void destroy_app(struct App* a);
-
-
 void _init_window(struct App* self) {
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);

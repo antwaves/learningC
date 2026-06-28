@@ -2,5 +2,9 @@
 C:/VulkanSDK/1.4.350.0/Include
 -I
 C:/dev/c/learning/CS2/orbit/include/glfw-3.4.bin.WIN64/glfw-3.4.bin.WIN64/include
+-I
+C:\dev\c\learning\CS2\orbit\include
+-I
+C:\dev\c\learning\CS2\orbit
 -DGLM_FORCE_RADIANS
 -DGLM_FORCE_DEPTH_ZERO_TO_ONE
