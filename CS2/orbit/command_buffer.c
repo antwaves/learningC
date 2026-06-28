@@ -13,7 +13,7 @@ void _transition_image_layout(struct App* self, uint32_t image_index, VkImageLay
                               VkPipelineStageFlags2 dst_stage_mask);
 
 
-void _create_command_pool(struct App* self) {
+void _create_command_pool(struct App* self) { // create our command pool, which manages our command buffer
     VkCommandPoolCreateInfo command_pool_create_info = {
         .flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
         .queueFamilyIndex = self->queue_family_index,
@@ -23,7 +23,7 @@ void _create_command_pool(struct App* self) {
 }
 
 
-void _create_command_buffers(struct App* self) {
+void _create_command_buffers(struct App* self) { // create our array of command buffers, based on our max frames in flight
     VkCommandBufferAllocateInfo alloc_info = {
         .commandPool = self->command_pool,
         .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY, 
@@ -40,8 +40,8 @@ void _create_command_buffers(struct App* self) {
 }
 
 
-void _record_command_buffer(struct App* self, uint32_t image_index) {
-    VkCommandBufferBeginInfo vk_command_buffer_begin_info = {
+void _record_command_buffer(struct App* self, uint32_t image_index) { // set the commands at a specific index in our array of command buffers. 
+    VkCommandBufferBeginInfo vk_command_buffer_begin_info = { // commands are put into a buffer, then sent all at once
         .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO
     };
     vkBeginCommandBuffer(self->command_buffers[self->frame_index], &vk_command_buffer_begin_info); // start reading commands
@@ -62,7 +62,7 @@ void _record_command_buffer(struct App* self, uint32_t image_index) {
     VkClearColorValue clear_c = {0.0f, 0.0f, 0.0f, 1.0f};
     VkClearValue clear_color = {.color = clear_c};
     VkRenderingAttachmentInfo attachment_info = {
-        .imageView = self->swap_chain_image_views[image_index],
+        .imageView = self->swap_chain_image_views[image_index], 
         .imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
         .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
         .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
@@ -108,7 +108,7 @@ void _record_command_buffer(struct App* self, uint32_t image_index) {
 }
 
 
-void _transition_image_layout(struct App* self, uint32_t image_index, VkImageLayout old_layout, 
+void _transition_image_layout(struct App* self, uint32_t image_index, VkImageLayout old_layout, // transitions between two image layours
                               VkImageLayout new_layout, VkAccessFlags2 src_access_mask, 
                               VkAccessFlags2 dst_access_mask, VkPipelineStageFlags2 src_stage_mask, 
                               VkPipelineStageFlags2 dst_stage_mask) {

@@ -18,13 +18,16 @@ struct App {
     bool frame_buffer_resized; // whether the window has been resized
     bool log; // config, whether or not to log
 
-    void (*run)(struct App* self); // run function supplied by user
-    struct extension_info extensions;
+    const uint32_t MAX_FRAMES_IN_FLIGHT; // max amount of frames processed at once
+    uint32_t frame_index;
+
+    void (*run)(struct App* self); 
+    struct extension_info extensions; // instance extensions
     GLFWwindow* window;
     VkInstance instance; // connection to the vulkan library
     VkDebugUtilsMessengerEXT debug_messenger;
 
-    VkPhysicalDevice physical_device; // our actual gpu 
+    VkPhysicalDevice physical_device; // repersentation our actual gpu 
     VkDevice logical_device; // vulkan's interface with the physical device
     uint32_t queue_family_index; // index of the queue in the list of queues
     VkQueue queue; // the queue that commands are presented to
@@ -33,20 +36,19 @@ struct App {
     VkSwapchainKHR swap_chain; // the infastructure that handles the queue of images that are waiting to be rendered to the screen
     VkImage* swap_chain_images; // the actual queue of images
     uint32_t swap_chain_image_count;
-    VkSurfaceFormatKHR swap_chain_surface_format; //
-    VkExtent2D swap_chain_extent;
-    VkImageView* swap_chain_image_views;
+    VkSurfaceFormatKHR swap_chain_surface_format;
+    VkExtent2D swap_chain_extent; 
+    VkImageView* swap_chain_image_views; // description of how swapchain images should be interpreted
 
-    VkPipelineLayout pipeline_layout; 
-    VkPipeline graphics_pipeline;
-    VkCommandPool command_pool;
+    VkPipelineLayout pipeline_layout; // describe uniforms in the pipeline
+    VkPipeline graphics_pipeline; // describes how to present our vertices to the screen
 
-    const uint32_t MAX_FRAMES_IN_FLIGHT;
-    uint32_t frame_index;
-    VkCommandBuffer* command_buffers;
-    VkSemaphore* present_complete_semaphores;
-    VkSemaphore* render_complete_semaphores;
-    VkFence* in_flight_fences;
+    VkCommandPool command_pool; // manages the memory of command buffers
+    VkCommandBuffer* command_buffers; // array of command buffers. commands are stored, then sent all at once.
+
+    VkSemaphore* present_complete_semaphores;  // makes the GPU wait for the presentation engine to stop using a image
+    VkSemaphore* render_complete_semaphores; //  makes the GPU wait to present an image until it's finished rendering
+    VkFence* in_flight_fences;  // makes the CPU wait to process the next image until the last one has finished presenting
 };
 
 #endif
