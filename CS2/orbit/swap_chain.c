@@ -9,6 +9,7 @@
 
 
 void _create_swap_chain(struct App* self) {
+    // query the surface capabilities
     VkSurfaceCapabilitiesKHR* surface_capabilities = calloc(1, sizeof(VkSurfaceCapabilitiesKHR));
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(self->physical_device, self->surface, surface_capabilities);
     uint32_t format_count = 0;
@@ -19,7 +20,7 @@ void _create_swap_chain(struct App* self) {
     vkGetPhysicalDeviceSurfacePresentModesKHR(self->physical_device, self->surface, &mode_count, NULL);
     VkPresentModeKHR* available_present_modes = calloc(mode_count, sizeof(VkPresentModeKHR));
     vkGetPhysicalDeviceSurfacePresentModesKHR(self->physical_device, self->surface, &mode_count, available_present_modes);
-
+    // pick surface settings
     VkSurfaceFormatKHR swap_format = choose_swap_surface_format(available_formats, format_count);
     VkPresentModeKHR present_mode = choose_present_mode(available_present_modes, mode_count);
     VkExtent2D swap_extent = choose_swap_extent(self->window, surface_capabilities);
@@ -39,10 +40,11 @@ void _create_swap_chain(struct App* self) {
         .compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
         .presentMode = present_mode,
         .clipped = true,
-        .oldSwapchain = self->swap_chain
+        .oldSwapchain = self->swap_chain // the swap chain that we are replacing, in the case of resizing
     };    
     
-    if (vkCreateSwapchainKHR(self->logical_device, &swap_chain_info, NULL, &self->swap_chain) != VK_SUCCESS) {
+    VkResult result = vkCreateSwapchainKHR(self->logical_device, &swap_chain_info, NULL, &self->swap_chain)
+    if (result != VK_SUCCESS) {
         fprintf_s(stderr, "Failed to create swap_chain!");
         exit(EXIT_FAILURE);
     }

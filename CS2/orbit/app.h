@@ -13,29 +13,29 @@ struct extension_info {
 };
 
 struct App {
-    uint32_t width;
+    uint32_t width; // window width and height
     uint32_t height;
-    bool log;
+    bool frame_buffer_resized; // whether the window has been resized
+    bool log; // config, whether or not to log
 
-    void (*run)(struct App* self);
+    void (*run)(struct App* self); // run function supplied by user
     struct extension_info extensions;
     GLFWwindow* window;
-    VkInstance instance;
+    VkInstance instance; // connection to the vulkan library
     VkDebugUtilsMessengerEXT debug_messenger;
 
-    VkSurfaceKHR surface;
-    VkPhysicalDevice physical_device;
-    VkDevice logical_device;
-    uint32_t queue_family_index;
-    VkQueue queue;
+    VkPhysicalDevice physical_device; // our actual gpu 
+    VkDevice logical_device; // vulkan's interface with the physical device
+    uint32_t queue_family_index; // index of the queue in the list of queues
+    VkQueue queue; // the queue that commands are presented to
+    VkSurfaceKHR surface; // an abstraction of the window system
 
-    VkSwapchainKHR swap_chain;
-    VkImage* swap_chain_images;
+    VkSwapchainKHR swap_chain; // the infastructure that handles the queue of images that are waiting to be rendered to the screen
+    VkImage* swap_chain_images; // the actual queue of images
     uint32_t swap_chain_image_count;
-    VkSurfaceFormatKHR swap_chain_surface_format;
+    VkSurfaceFormatKHR swap_chain_surface_format; //
     VkExtent2D swap_chain_extent;
     VkImageView* swap_chain_image_views;
-    bool frame_buffer_resized;
 
     VkPipelineLayout pipeline_layout; 
     VkPipeline graphics_pipeline;

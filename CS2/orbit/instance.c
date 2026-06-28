@@ -14,7 +14,8 @@ static void _get_required_instance_extensions(struct App* self);
 static void check_extensions(const char** glfw_extensions, int glfw_extension_count, bool log);
 void _create_surface(struct App* self);
 
-void _create_instance(struct App* self) {
+
+void _create_instance(struct App* self) { // create the instance which connects to the vulkan library
     check_validation_layers();
 
     VkApplicationInfo app_info = {.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO, 
@@ -23,9 +24,10 @@ void _create_instance(struct App* self) {
                                   .pEngineName = "No Engine",
                                   .engineVersion = VK_MAKE_VERSION(1, 0, 3), .apiVersion = VK_API_VERSION_1_4};
 
-    _get_required_instance_extensions(self);
+    _get_required_instance_extensions(self); // glfw and physical device extensions
     struct extension_info extension_info = self->extensions;
     check_extensions(extension_info.extension_names, extension_info.extension_count, self->log);
+
     VkInstanceCreateInfo create_info = {.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO, 
                                         .pApplicationInfo = &app_info,
                                         .enabledExtensionCount = extension_info.extension_count, 
@@ -33,15 +35,15 @@ void _create_instance(struct App* self) {
                                         .enabledLayerCount = 1, 
                                         .ppEnabledLayerNames = enable_validation_layers ? validation_layers : NULL
                                     };
-    
-    if (vkCreateInstance(&create_info, NULL, &(self->instance)) != VK_SUCCESS) {
-        perror("Error: ");
+    VkResult result = vkCreateInstance(&create_info, NULL, &(self->instance));
+    if (result != VK_SUCCESS) {
+        fprintf(stderr, "Failed to create instance!");
         exit(EXIT_FAILURE);
     }
 }
 
 
-static void _get_required_instance_extensions(struct App* self) {
+static void _get_required_instance_extensions(struct App* self) {  // get GLFW and validation layer extensions
     uint32_t glfw_extension_count = 0;
     const char** glfw_extensions = glfwGetRequiredInstanceExtensions(&glfw_extension_count);
 
@@ -64,10 +66,9 @@ static void _get_required_instance_extensions(struct App* self) {
 }
 
 
-static void check_extensions(const char** glfw_extensions, int glfw_extension_count, bool log) { // TODO: PASS EXTENSIONS BACK OUT
+static void check_extensions(const char** glfw_extensions, int glfw_extension_count, bool log) { // check extension support from our instance
     uint32_t extension_count = 0;
-    vkEnumerateInstanceExtensionProperties(NULL, &extension_count, NULL);
-
+    vkEnumerateInstanceExtensionProperties(NULL, &extension_count, NULL); // get num extensions
     VkExtensionProperties* extensions = malloc(extension_count * sizeof(VkExtensionProperties));
     vkEnumerateInstanceExtensionProperties(NULL, &extension_count, extensions);
 
@@ -105,7 +106,7 @@ static void check_extensions(const char** glfw_extensions, int glfw_extension_co
 }
 
 
-void _create_surface(struct App* self) {
+void _create_surface(struct App* self) { // abstract the GLFW window into a surface, to query capabilites and present images to
     if (glfwCreateWindowSurface(self->instance, self->window, NULL, &self->surface) != 0) {
         fprintf_s(stderr, "Failed to create window surface!");
         exit(EXIT_FAILURE);

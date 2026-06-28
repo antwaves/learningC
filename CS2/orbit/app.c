@@ -27,7 +27,6 @@ void _init_window(struct App* self) {
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
-
     self->window = glfwCreateWindow(self->width, self->height, "Vulkan", NULL, NULL);
     glfwSetWindowUserPointer(self->window, self);
     glfwSetFramebufferSizeCallback(self->window, framebuffer_resize_callback);
@@ -57,7 +56,7 @@ void _main_loop(struct App* self) {
 }
 
 
-void _clean_up(struct App* self) {
+void _clean_up(struct App* self) { // have to destroy things in a specific order (mostly, logical device dependent things first)
     free(self->extensions.extension_names);
 
     vkDeviceWaitIdle(self->logical_device);

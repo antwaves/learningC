@@ -13,7 +13,7 @@ void _setup_debug_messenger(struct App* self);
 static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT severity, \
                                                      VkDebugUtilsMessageTypeFlagsEXT type, \
                                                      const VkDebugUtilsMessengerCallbackDataEXT* p_callback_data, \
-                                                     void* p_user_data) {
+                                                     void* p_user_data) { // logs warnings/errors. attached to vulkan instance, called when vulkan validation layers detect a problem
     if (severity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
         fprintf_s(stderr, "\nValidation Layer: type %u msg: %s\n\n", type, p_callback_data->pMessage);
     }
@@ -21,7 +21,7 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(VkDebugUtilsMessageSeverity
 }
 
 
-void check_validation_layers() {
+void check_validation_layers() { // check for validation layer support from our instance
     VkLayerProperties* layers;
     uint32_t layer_count = 0;
     vkEnumerateInstanceLayerProperties(&layer_count, NULL);
@@ -50,7 +50,7 @@ void check_validation_layers() {
 
 
 
-void _setup_debug_messenger(struct App* self) {
+void _setup_debug_messenger(struct App* self) { // attach the debug callback to vulkan's validation layers
     if (!enable_validation_layers) return;
 
     LOAD_INSTANCE_EXT(self->instance, vkCreateDebugUtilsMessengerEXT);
@@ -60,7 +60,7 @@ void _setup_debug_messenger(struct App* self) {
         exit(EXIT_FAILURE);
     }
 
-    VkDebugUtilsMessageSeverityFlagsEXT severity_flags = VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | 
+    VkDebugUtilsMessageSeverityFlagsEXT severity_flags = VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | // decides what types of messages get sent to the callback
                                                          VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT |
                                                          VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT ; 
 
@@ -70,12 +70,11 @@ void _setup_debug_messenger(struct App* self) {
                                                          VK_DEBUG_UTILS_MESSAGE_TYPE_DEVICE_ADDRESS_BINDING_BIT_EXT;
 
     VkDebugUtilsMessengerCreateInfoEXT debug_utils_messenger_create_info_ext = {
-        .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT,
         .messageSeverity = severity_flags,
         .messageType = message_type_flags, 
-        .pfnUserCallback = &debug_callback
+        .pfnUserCallback = &debug_callback,
+        .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT
     };
-
 
     VkResult result = vkCreateDebugUtilsMessengerEXT(self->instance, &debug_utils_messenger_create_info_ext, NULL, &self->debug_messenger);
     if (result != VK_SUCCESS) {

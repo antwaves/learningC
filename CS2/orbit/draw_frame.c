@@ -65,6 +65,7 @@ void _draw_frame(struct App* self) {
     self->frame_index = (self->frame_index + 1) % self->MAX_FRAMES_IN_FLIGHT;
 }
 
+
 void _create_sync_objects(struct App* self) {
     VkSemaphoreCreateInfo semaphore_create_info = {.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO};
     VkFenceCreateInfo fence_create_info = {.flags = VK_FENCE_CREATE_SIGNALED_BIT, .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};
