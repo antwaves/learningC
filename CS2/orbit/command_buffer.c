@@ -1,4 +1,5 @@
 #include "app.h"
+#include "vertex.h"
 #include "vulkan/vulkan_core.h"
 
 #include <stdio.h>
@@ -81,16 +82,20 @@ void _record_command_buffer(struct App* self, uint32_t image_index) { // set the
     };
 
     //render commands
-    vkCmdBeginRendering(self->command_buffers[self->frame_index], &rendering_info);
-    vkCmdBindPipeline(self->command_buffers[self->frame_index], VK_PIPELINE_BIND_POINT_GRAPHICS, self->graphics_pipeline);
+    VkCommandBuffer cmd_buffer = self->command_buffers[self->frame_index];
+    vkCmdBeginRendering(cmd_buffer, &rendering_info);
+    vkCmdBindPipeline(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, self->graphics_pipeline);
+    const VkDeviceSize offsets = {0};
+    vkCmdBindVertexBuffers(cmd_buffer, 0, 1, &self->vertex_buffer, &offsets);
+    
     VkViewport viewport[] = {{0.0f, 0.0f, (float)self->swap_chain_extent.width, (float)self->swap_chain_extent.height, 0.0f, 1.0f}};
-    vkCmdSetViewport(self->command_buffers[self->frame_index], 0, 1, viewport);
+    vkCmdSetViewport(cmd_buffer, 0, 1, viewport);
     VkRect2D scissor[] = {
         {{0, 0}, self->swap_chain_extent}
     };
-    vkCmdSetScissor(self->command_buffers[self->frame_index], 0, 1, scissor);
-    vkCmdDraw(self->command_buffers[self->frame_index], 3, 1, 0, 0);
-    vkCmdEndRendering(self->command_buffers[self->frame_index]);
+    vkCmdSetScissor(cmd_buffer, 0, 1, scissor);
+    vkCmdDraw(cmd_buffer, 3, 1, 0, 0); //AAAAAaa
+    vkCmdEndRendering(cmd_buffer);
 
     // after  rendering, transition the swapchain image to vk::ImageLayout::ePresentSrcKHR
     _transition_image_layout(

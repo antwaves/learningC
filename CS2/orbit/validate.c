@@ -16,6 +16,18 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(VkDebugUtilsMessageSeverity
                                                      void* p_user_data) { // logs warnings/errors. attached to vulkan instance, called when vulkan validation layers detect a problem
     if (severity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
         fprintf_s(stderr, "\nValidation Layer: type %u msg: %s\n\n", type, p_callback_data->pMessage);
+
+        for (int i = 0; i < p_callback_data->objectCount; i++) {
+            fprintf_s(stderr, "%s\n", p_callback_data->pObjects[i].pObjectName);
+        }
+
+        for (int i = 0; i < p_callback_data->cmdBufLabelCount; i++) {
+            fprintf_s(stderr, "%s\n", p_callback_data->pCmdBufLabels[i].pLabelName);
+        }
+
+        for (int i = 0; i < p_callback_data->queueLabelCount; i++) {
+            fprintf_s(stderr, "%s\n", p_callback_data->pQueueLabels[i].pLabelName);
+        }
     }
     return VK_FALSE;
 }

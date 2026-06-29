@@ -1,14 +1,15 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
+#include <vulkan/vulkan_core.h>
 
-#include "vulkan/vulkan_core.h"
 #include "app.h"
-#include "validate.c"
 #include "instance.c"
+#include "validate.c"
 #include "physical_device.c"
 #include "logical_device.c"
 #include "swap_chain.c"
 #include "graphics_pipeline.c"
+#include "vertex.c"
 #include "command_buffer.c"
 #include "draw_frame.c"
 
@@ -33,6 +34,7 @@ void _init_vulkan(struct App* self) {
     _create_image_views(self);
     _create_graphics_pipeline(self);
     _create_command_pool(self);
+    _create_vertex_buffer(self);
     _create_command_buffers(self);
     _create_sync_objects(self);
 }

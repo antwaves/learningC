@@ -43,6 +43,9 @@ struct App {
     VkPipelineLayout pipeline_layout; // describe uniforms in the pipeline
     VkPipeline graphics_pipeline; // describes how to present our vertices to the screen
 
+    VkBuffer vertex_buffer;
+    VkDeviceMemory  vertex_buffer_memory;
+
     VkCommandPool command_pool; // manages the memory of command buffers
     VkCommandBuffer* command_buffers; // array of command buffers. commands are stored, then sent all at once.
 
