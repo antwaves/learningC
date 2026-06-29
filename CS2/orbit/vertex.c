@@ -11,7 +11,7 @@ void _create_vertex_buffer(struct App* self) {
     VkBufferCreateInfo buffer_info = {
         .size = sizeof(vertices),
         .usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-        .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+        .sharingMode = VK_SHARING_MODE_CONCURRENT,
         .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO
     };
     vkCreateBuffer(self->logical_device, &buffer_info, NULL, &self->vertex_buffer);

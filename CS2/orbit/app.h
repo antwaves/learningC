@@ -29,8 +29,10 @@ struct App {
 
     VkPhysicalDevice physical_device; // repersentation our actual gpu 
     VkDevice logical_device; // vulkan's interface with the physical device
-    uint32_t queue_family_index; // index of the queue in the list of queues
-    VkQueue queue; // the queue that commands are presented to
+    uint32_t graphics_queue_family_index;
+    uint32_t transfer_queue_family_index;
+    VkQueue graphics_queue; 
+    VkQueue transfer_queue; 
     VkSurfaceKHR surface; // an abstraction of the window system
 
     VkSwapchainKHR swap_chain; // the infastructure that handles the queue of images that are waiting to be rendered to the screen
@@ -46,7 +48,8 @@ struct App {
     VkBuffer vertex_buffer;
     VkDeviceMemory  vertex_buffer_memory;
 
-    VkCommandPool command_pool; // manages the memory of command buffers
+    VkCommandPool graphics_command_pool; 
+    VkCommandPool transfer_command_pool;
     VkCommandBuffer* command_buffers; // array of command buffers. commands are stored, then sent all at once.
 
     VkSemaphore* present_complete_semaphores;  // makes the GPU wait for the presentation engine to stop using a image

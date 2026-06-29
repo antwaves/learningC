@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-void _create_command_pool(struct App* self);
+void _create_command_pools(struct App* self);
 void _create_command_buffers(struct App* self);
 void _record_command_buffer(struct App* self, uint32_t image_index);
 void _transition_image_layout(struct App* self, uint32_t image_index, VkImageLayout old_layout, 
@@ -14,19 +14,26 @@ void _transition_image_layout(struct App* self, uint32_t image_index, VkImageLay
                               VkPipelineStageFlags2 dst_stage_mask);
 
 
-void _create_command_pool(struct App* self) { // create our command pool, which manages our command buffer
-    VkCommandPoolCreateInfo command_pool_create_info = {
+void _create_command_pools(struct App* self) { // create our command pool, which manages our command buffer
+    VkCommandPoolCreateInfo graphics_command_pool_create_info = {
         .flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
-        .queueFamilyIndex = self->queue_family_index,
+        .queueFamilyIndex = self->graphics_queue_family_index,
         .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO
     };
-    vkCreateCommandPool(self->logical_device, &command_pool_create_info, NULL, &self->command_pool);
+    VkCommandPoolCreateInfo transfer_command_pool_create_info = {
+        .queueFamilyIndex = self->transfer_queue_family_index,
+        .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO
+    };
+
+    vkCreateCommandPool(self->logical_device, &graphics_command_pool_create_info, NULL, &self->graphics_command_pool);
+    vkCreateCommandPool(self->logical_device, &transfer_command_pool_create_info, NULL, &self->transfer_command_pool);
+
 }
 
 
 void _create_command_buffers(struct App* self) { // create our array of command buffers, based on our max frames in flight
     VkCommandBufferAllocateInfo alloc_info = {
-        .commandPool = self->command_pool,
+        .commandPool = self->graphics_command_pool,
         .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY, 
         .commandBufferCount = self->MAX_FRAMES_IN_FLIGHT,
         .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO

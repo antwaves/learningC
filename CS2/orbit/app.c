@@ -33,7 +33,7 @@ void _init_vulkan(struct App* self) {
     _create_swap_chain(self);
     _create_image_views(self);
     _create_graphics_pipeline(self);
-    _create_command_pool(self);
+    _create_command_pools(self);
     _create_vertex_buffer(self);
     _create_command_buffers(self);
     _create_sync_objects(self);
@@ -58,7 +58,8 @@ void _clean_up(struct App* self) { // have to destroy things in a specific order
     vkDestroyPipelineLayout(self->logical_device, self->pipeline_layout, NULL);
     vkDestroyPipeline(self->logical_device, self->graphics_pipeline, NULL);
     free(self->command_buffers);
-    vkDestroyCommandPool(self->logical_device, self->command_pool, NULL);
+    vkDestroyCommandPool(self->logical_device, self->graphics_command_pool, NULL);
+    vkDestroyCommandPool(self->logical_device, self->transfer_command_pool, NULL);
 
     for (size_t i = 0; i < self->MAX_FRAMES_IN_FLIGHT; i++) {
         vkDestroySemaphore(self->logical_device, self->present_complete_semaphores[i], NULL);

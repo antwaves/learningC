@@ -37,7 +37,7 @@ void _create_swap_chain(struct App* self) {
         .imageExtent = swap_extent, 
         .imageArrayLayers = 1,
         .imageUsage =  VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, 
-        .imageSharingMode = VK_SHARING_MODE_EXCLUSIVE,
+        .imageSharingMode = VK_SHARING_MODE_CONCURRENT,
         .preTransform = surface_capabilities->currentTransform,
         .compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
         .presentMode = present_mode,

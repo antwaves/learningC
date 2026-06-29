@@ -47,7 +47,7 @@ void _draw_frame(struct App* self) { // draw a frame
         .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO
     };
     // submit our commands to the swapchain queue
-    vkQueueSubmit(self->queue, 1, &submit_info, self->in_flight_fences[self->frame_index]); // blocks the CPU from rendering another frame and submitting those commands while we're submitting commands
+    vkQueueSubmit(self->graphics_queue, 1, &submit_info, self->in_flight_fences[self->frame_index]); // blocks the CPU from rendering another frame and submitting those commands while we're submitting commands
     // describe how to present our image
     const VkPresentInfoKHR present_info_KHR = {
         .waitSemaphoreCount = 1,
@@ -58,7 +58,7 @@ void _draw_frame(struct App* self) { // draw a frame
         .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR
     };
     // present our image to the queue, which presents it to the screen
-    result = vkQueuePresentKHR(self->queue, &present_info_KHR);
+    result = vkQueuePresentKHR(self->graphics_queue, &present_info_KHR);
     if (result == VK_SUBOPTIMAL_KHR || result == VK_ERROR_OUT_OF_DATE_KHR || self->frame_buffer_resized) { // if we've changed window sizes, recreate the swap chain to account for it
         self->frame_buffer_resized = false;
         _recreate_swap_chain(self);
