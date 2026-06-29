@@ -11,8 +11,6 @@ void _draw_frame(struct App* self);
 void _create_sync_objects(struct App* self);
 static void framebuffer_resize_callback(GLFWwindow* window, int width, int height);
 
-const int MAX_FRAMES_IN_FLIGHT = 2;
-
 
 void _draw_frame(struct App* self) { // draw a frame
     // wait for previous frame to finish using a fence
@@ -80,7 +78,7 @@ void _create_sync_objects(struct App* self) {
 
     self->present_complete_semaphores = calloc(self->MAX_FRAMES_IN_FLIGHT, sizeof(VkSemaphore)); // makes the GPU wait for the presentation engine to stop using a image
     self->in_flight_fences= calloc(self->MAX_FRAMES_IN_FLIGHT, sizeof(VkFence)); // makes the CPU wait to process the next image until the last one has finished presenting
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+    for (size_t i = 0; i < self->MAX_FRAMES_IN_FLIGHT; i++) {
         vkCreateSemaphore(self->logical_device, &semaphore_create_info, NULL, &self->present_complete_semaphores[i]);
         vkCreateFence(self->logical_device, &fence_create_info, NULL, &self->in_flight_fences[i]);
     }

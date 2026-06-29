@@ -49,7 +49,6 @@ void check_validation_layers() { // check for validation layer support from our 
 }
 
 
-
 void _setup_debug_messenger(struct App* self) { // attach the debug callback to vulkan's validation layers
     if (!enable_validation_layers) return;
 

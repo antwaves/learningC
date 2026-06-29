@@ -1,4 +1,5 @@
 #include "app.h"
+#include "vertex.h"
 #include "vulkan/vulkan_core.h"
 
 #include <stdint.h>
@@ -28,6 +29,7 @@ void _create_graphics_pipeline(struct App* self) { // create the graphics pipeli
         .pName = "frag_main"
     };
     VkPipelineShaderStageCreateInfo shader_stages[] = {vert_shader_stage_info, frag_shader_stage_info};
+
     // set the viewport (describes the transition from image to framebuffer) and scissor rectangle (describes which parts of framebuffer will be stored) to dynamic
     // these two will have to be set at draw time
     VkDynamicState dynamic_states[] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
@@ -36,11 +38,22 @@ void _create_graphics_pipeline(struct App* self) { // create the graphics pipeli
         .pDynamicStates = dynamic_states, 
         .sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO
     };
-    // vertex input describes the the format of the vertex data. hardcoded verticies, so no need.
-    VkPipelineVertexInputStateCreateInfo vertex_input_info =  {.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO};
+
+    // vertex input describes the the format of the vertex data.
+    VkVertexInputBindingDescription binding_desc = get_binding_description();
+    vertex_in_attr_list attribute_descriptions = get_attribute_descriptions();
+    VkPipelineVertexInputStateCreateInfo vertex_input_info =  {
+        .vertexBindingDescriptionCount = 1,
+        .pVertexBindingDescriptions = &binding_desc,
+        .vertexAttributeDescriptionCount = attribute_descriptions.count,
+        .pVertexAttributeDescriptions = attribute_descriptions.attr_descriptions,
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO
+    };
+
     // input assembly describes what kind of geometry is being drawn
     VkPipelineInputAssemblyStateCreateInfo input_assembly = {.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, .sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO};
     VkPipelineViewportStateCreateInfo  viewport_state = {.viewportCount = 1, .scissorCount = 1, .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO};
+    
     // rasterizer takes geometry and turns in into fragments to be colored. also culls and depth tests
     VkPipelineRasterizationStateCreateInfo rasterizer = {
         .depthClampEnable = VK_FALSE,
@@ -52,12 +65,14 @@ void _create_graphics_pipeline(struct App* self) { // create the graphics pipeli
         .lineWidth = 1.0f,
         .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO
     };
+   
     // disable multisampling
     VkPipelineMultisampleStateCreateInfo multisampling = {
         .rasterizationSamples = VK_SAMPLE_COUNT_1_BIT,
         .sampleShadingEnable = VK_FALSE,
         .sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO
     };
+    
     // color blend attachments describe how colors in the fragment shader are mixed
     VkPipelineColorBlendAttachmentState color_blend_attachment = {
         .blendEnable = VK_TRUE,
@@ -76,6 +91,7 @@ void _create_graphics_pipeline(struct App* self) { // create the graphics pipeli
         .pAttachments = &color_blend_attachment,
         .sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO
     };
+    
     // describes uniforms, but we have none
     VkPipelineLayoutCreateInfo pipeline_layout_info = {
         .setLayoutCount = 0, 
@@ -83,6 +99,7 @@ void _create_graphics_pipeline(struct App* self) { // create the graphics pipeli
         .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
     };
     vkCreatePipelineLayout(self->logical_device, &pipeline_layout_info, NULL, &self->pipeline_layout);
+    
     // structure chain describing the whole graphics pipeline
     VkPipelineRenderingCreateInfo pipeline_rendering_create_info = {
         .colorAttachmentCount = 1,
