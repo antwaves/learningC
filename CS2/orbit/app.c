@@ -53,6 +53,8 @@ void _clean_up(struct App* self) { // have to destroy things in a specific order
 
     vkDeviceWaitIdle(self->logical_device);
     _cleanup_swap_chain(self);
+    vkFreeMemory(self->logical_device, self->vertex_buffer_memory, NULL);
+    vkDestroyBuffer(self->logical_device, self->vertex_buffer, NULL);
     vkDestroyPipelineLayout(self->logical_device, self->pipeline_layout, NULL);
     vkDestroyPipeline(self->logical_device, self->graphics_pipeline, NULL);
     free(self->command_buffers);

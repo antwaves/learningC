@@ -18,11 +18,11 @@ void _create_vertex_buffer(struct App* self) {
 
     VkMemoryRequirements mem_requirements;
     vkGetBufferMemoryRequirements(self->logical_device, self->vertex_buffer, &mem_requirements);
-
     int mem_property_bit = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     VkMemoryAllocateInfo alloc_info = {
         .allocationSize = mem_requirements.size, 
-        .memoryTypeIndex = find_memory_type(mem_requirements.memoryTypeBits, mem_property_bit, &self->physical_device)
+        .memoryTypeIndex = find_memory_type(mem_requirements.memoryTypeBits, mem_property_bit, &self->physical_device),
+        .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO
     };
     vkAllocateMemory(self->logical_device, &alloc_info, NULL, &self->vertex_buffer_memory);
     vkBindBufferMemory(self->logical_device, self->vertex_buffer, self->vertex_buffer_memory, 0);
@@ -57,7 +57,7 @@ VkVertexInputBindingDescription get_binding_description() {
 }
 
 
-vertex_in_attr_list get_attribute_descriptions() {
+vertex_in_attr_list* get_attribute_descriptions() {
     VkVertexInputAttributeDescription position = {
         .location = 0, 
         .binding = 0,
@@ -71,7 +71,11 @@ vertex_in_attr_list get_attribute_descriptions() {
         .offset = offsetof(Vertex, color)
     };
 
-    VkVertexInputAttributeDescription bindings[] = {position, color};
-    vertex_in_attr_list binding_description = {2, bindings};
+    vertex_in_attr_list* binding_description = calloc(1, sizeof(vertex_in_attr_list));
+    binding_description->count = 2;
+    binding_description->attr_descriptions = calloc(2, sizeof(VkVertexInputAttributeDescription));
+    binding_description->attr_descriptions[0] = position;
+    binding_description->attr_descriptions[1] = color;
+
     return binding_description;
 }

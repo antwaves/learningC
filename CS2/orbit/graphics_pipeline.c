@@ -41,12 +41,12 @@ void _create_graphics_pipeline(struct App* self) { // create the graphics pipeli
 
     // vertex input describes the the format of the vertex data.
     VkVertexInputBindingDescription binding_desc = get_binding_description();
-    vertex_in_attr_list attribute_descriptions = get_attribute_descriptions();
+    vertex_in_attr_list* attribute_descriptions = get_attribute_descriptions();
     VkPipelineVertexInputStateCreateInfo vertex_input_info =  {
         .vertexBindingDescriptionCount = 1,
         .pVertexBindingDescriptions = &binding_desc,
-        .vertexAttributeDescriptionCount = attribute_descriptions.count,
-        .pVertexAttributeDescriptions = attribute_descriptions.attr_descriptions,
+        .vertexAttributeDescriptionCount = attribute_descriptions->count,
+        .pVertexAttributeDescriptions = attribute_descriptions->attr_descriptions,
         .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO
     };
 
@@ -128,6 +128,8 @@ void _create_graphics_pipeline(struct App* self) { // create the graphics pipeli
     vkCreateGraphicsPipelines(self->logical_device, NULL, 1, graphics_pipeline_create_info_chain, NULL, &self->graphics_pipeline);
     vkDestroyShaderModule(self->logical_device, module, NULL);
     free(shader_bytes);
+    free(attribute_descriptions->attr_descriptions);
+    free(attribute_descriptions);
 }
 
 

@@ -23,7 +23,7 @@ const Vertex vertices[] = {
 
 
 VkVertexInputBindingDescription get_binding_description();
-vertex_in_attr_list get_attribute_descriptions();
+vertex_in_attr_list* get_attribute_descriptions();
 void _create_vertex_buffer(struct App* self);
 
 uint32_t find_memory_type(uint32_t type_filter, VkMemoryPropertyFlags properties, VkPhysicalDevice* physical_device);
