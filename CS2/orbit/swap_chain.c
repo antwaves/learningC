@@ -27,6 +27,10 @@ void _create_swap_chain(struct App* self) {
     VkPresentModeKHR present_mode = choose_present_mode(available_present_modes, mode_count);
     VkExtent2D swap_extent = choose_swap_extent(self->window, surface_capabilities);
     uint32_t min_image_count = choose_swap_min_image_count(surface_capabilities);
+    // change sharing mode based on whether or not a transfer queue is available
+    uint32_t queue_family_indices[] = {self->graphics_queue_family_index, self->transfer_queue_family_index};
+    uint32_t queue_family_index_count = 1 + (self->graphics_queue_family_index != self->transfer_queue_family_index);
+    int sharing_mode = self->graphics_queue_family_index == self->transfer_queue_family_index ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT;
     //create the actual swap chain
     VkSwapchainCreateInfoKHR swap_chain_info = {
         .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
@@ -37,7 +41,9 @@ void _create_swap_chain(struct App* self) {
         .imageExtent = swap_extent, 
         .imageArrayLayers = 1,
         .imageUsage =  VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, 
-        .imageSharingMode = VK_SHARING_MODE_CONCURRENT,
+        .imageSharingMode = sharing_mode,
+        .queueFamilyIndexCount = queue_family_index_count,
+        .pQueueFamilyIndices = queue_family_indices,
         .preTransform = surface_capabilities->currentTransform,
         .compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
         .presentMode = present_mode,

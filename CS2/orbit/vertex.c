@@ -15,7 +15,7 @@ void _create_vertex_buffer(struct App* self) {
 
     VkBuffer staging_buffer;
     VkDeviceMemory staging_buffer_memory;
-    create_buffer(staging_buffer, staging_buffer_memory, self->logical_device, self->physical_device, buffer_size, buffer_usage, mem_properties);
+    create_buffer(&staging_buffer, &staging_buffer_memory, self, buffer_size, buffer_usage, mem_properties);
     
     void* data;
     vkMapMemory(self->logical_device, staging_buffer_memory, 0, buffer_size , 0, &data);
@@ -24,9 +24,12 @@ void _create_vertex_buffer(struct App* self) {
 
     buffer_usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     mem_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-    create_buffer(self->vertex_buffer, self->vertex_buffer_memory, self->logical_device, self->physical_device, buffer_size, buffer_usage, mem_properties);
+    create_buffer(&self->vertex_buffer,& self->vertex_buffer_memory, self, buffer_size, buffer_usage, mem_properties);
 
-    copy_buffer(self->transfer_command_pool, self->transfer_queue, self->logical_device, staging_buffer, self->vertex_buffer, buffer_size);
+    copy_buffer(staging_buffer, self->vertex_buffer, self, buffer_size);
+
+    vkFreeMemory(self->logical_device, staging_buffer_memory, NULL);
+    vkDestroyBuffer(self->logical_device, staging_buffer, NULL);
 }   
 
 

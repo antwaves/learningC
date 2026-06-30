@@ -6,24 +6,30 @@
 #include "vulkan/vulkan_core.h"
 
 
-void create_buffer(VkBuffer buffer, VkDeviceMemory buffer_memory, VkDevice logical_device, VkPhysicalDevice physical_device, VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties) {
+void create_buffer(VkBuffer* p_buffer, VkDeviceMemory* p_buffer_memory, struct App* app, VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties) {
+    uint32_t queue_family_indices[] = {app->graphics_queue_family_index, app->transfer_queue_family_index};
+    uint32_t queue_family_index_count = 1 + (app->graphics_queue_family_index != app->transfer_queue_family_index);
+    int sharing_mode = app->graphics_queue_family_index == app->transfer_queue_family_index ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT;
+
     VkBufferCreateInfo buffer_info = {
         .size = size,
         .usage = usage,
-        .sharingMode = VK_SHARING_MODE_CONCURRENT,
+        .sharingMode = sharing_mode,
+        .queueFamilyIndexCount = queue_family_index_count,
+        .pQueueFamilyIndices = queue_family_indices,
         .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO
     };
-    vkCreateBuffer(logical_device, &buffer_info, NULL, &buffer);
+    vkCreateBuffer(app->logical_device, &buffer_info, NULL, p_buffer);
 
     VkMemoryRequirements mem_requirements;
-    vkGetBufferMemoryRequirements(logical_device, buffer, &mem_requirements);
+    vkGetBufferMemoryRequirements(app->logical_device, *p_buffer, &mem_requirements);
     VkMemoryAllocateInfo alloc_info = {
         .allocationSize = mem_requirements.size, 
-        .memoryTypeIndex = find_memory_type(mem_requirements.memoryTypeBits, properties, &physical_device),
+        .memoryTypeIndex = find_memory_type(mem_requirements.memoryTypeBits, properties, &app->physical_device),
         .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO
     };
-    vkAllocateMemory(logical_device, &alloc_info, NULL, &buffer_memory);
-    vkBindBufferMemory(logical_device, buffer, buffer_memory, 0);
+    vkAllocateMemory(app->logical_device, &alloc_info, NULL, p_buffer_memory);
+    vkBindBufferMemory(app->logical_device, *p_buffer, *p_buffer_memory, 0);
 }
 
 
@@ -42,14 +48,15 @@ uint32_t find_memory_type(uint32_t type_filter, VkMemoryPropertyFlags properties
 }
 
 
-void copy_buffer(VkCommandPool command_pool, VkQueue transfer_queue, VkDevice logical_device,  VkBuffer src_buffer, VkBuffer dst_buffer, int size) {
+void copy_buffer(VkBuffer src_buffer, VkBuffer dst_buffer, struct App* app, int size) {
     VkCommandBufferAllocateInfo alloc_info = {
-        .commandPool = command_pool,
+        .commandPool = app->transfer_command_pool,
         .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
-        .commandBufferCount = 1
+        .commandBufferCount = 1,
+        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO
     };
     VkCommandBuffer cmd_buffer;
-    vkAllocateCommandBuffers(logical_device, &alloc_info, &cmd_buffer);
+    vkAllocateCommandBuffers(app->logical_device, &alloc_info, &cmd_buffer);
     VkCommandBufferBeginInfo vk_command_buffer_begin_info = {.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
     vkBeginCommandBuffer(cmd_buffer, &vk_command_buffer_begin_info); 
     VkBufferCopy region = {.srcOffset = 0, .dstOffset = 0, .size = size};
@@ -62,6 +69,6 @@ void copy_buffer(VkCommandPool command_pool, VkQueue transfer_queue, VkDevice lo
         .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO
     };
 
-    vkQueueSubmit(transfer_queue, 1, &submit_info, NULL);
-    vkQueueWaitIdle(transfer_queue);
+    vkQueueSubmit(app->transfer_queue, 1, &submit_info, NULL);
+    vkQueueWaitIdle(app->transfer_queue);
 }

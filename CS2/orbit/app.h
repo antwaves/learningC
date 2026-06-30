@@ -46,7 +46,7 @@ struct App {
     VkPipeline graphics_pipeline; // describes how to present our vertices to the screen
 
     VkBuffer vertex_buffer;
-    VkDeviceMemory  vertex_buffer_memory;
+    VkDeviceMemory vertex_buffer_memory;
 
     VkCommandPool graphics_command_pool; 
     VkCommandPool transfer_command_pool;
