@@ -4,48 +4,30 @@
 
 #include "vertex.h"
 #include "app.h"
+#include "buffer.c"
 #include "vulkan/vulkan_core.h"
 
 
 void _create_vertex_buffer(struct App* self) {
-    VkBufferCreateInfo buffer_info = {
-        .size = sizeof(vertices),
-        .usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-        .sharingMode = VK_SHARING_MODE_CONCURRENT,
-        .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO
-    };
-    vkCreateBuffer(self->logical_device, &buffer_info, NULL, &self->vertex_buffer);
+    int buffer_usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+    int mem_properties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    VkDeviceSize buffer_size = sizeof(vertices);
 
-    VkMemoryRequirements mem_requirements;
-    vkGetBufferMemoryRequirements(self->logical_device, self->vertex_buffer, &mem_requirements);
-    int mem_property_bit = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    VkMemoryAllocateInfo alloc_info = {
-        .allocationSize = mem_requirements.size, 
-        .memoryTypeIndex = find_memory_type(mem_requirements.memoryTypeBits, mem_property_bit, &self->physical_device),
-        .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO
-    };
-    vkAllocateMemory(self->logical_device, &alloc_info, NULL, &self->vertex_buffer_memory);
-    vkBindBufferMemory(self->logical_device, self->vertex_buffer, self->vertex_buffer_memory, 0);
-
+    VkBuffer staging_buffer;
+    VkDeviceMemory staging_buffer_memory;
+    create_buffer(staging_buffer, staging_buffer_memory, self->logical_device, self->physical_device, buffer_size, buffer_usage, mem_properties);
+    
     void* data;
-    vkMapMemory(self->logical_device, self->vertex_buffer_memory, 0, buffer_info.size, 0, &data);
-    memcpy(data, vertices, buffer_info.size);
+    vkMapMemory(self->logical_device, staging_buffer_memory, 0, buffer_size , 0, &data);
+    memcpy(data, vertices, buffer_size);
+    vkUnmapMemory(self->logical_device, staging_buffer_memory);
+
+    buffer_usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    mem_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+    create_buffer(self->vertex_buffer, self->vertex_buffer_memory, self->logical_device, self->physical_device, buffer_size, buffer_usage, mem_properties);
+
+    copy_buffer(self->transfer_command_pool, self->transfer_queue, self->logical_device, staging_buffer, self->vertex_buffer, buffer_size);
 }   
-
-
-uint32_t find_memory_type(uint32_t type_filter, VkMemoryPropertyFlags properties, VkPhysicalDevice* physical_device) {
-    VkPhysicalDeviceMemoryProperties mem_properties;
-    vkGetPhysicalDeviceMemoryProperties(*physical_device, &mem_properties);
-
-    for (uint32_t i = 0; i <  mem_properties.memoryTypeCount; i++) {
-        if ((type_filter & (1 << i)) && (mem_properties.memoryTypes[i].propertyFlags & properties) == properties) {
-            return i;
-        }
-    }
-
-    fprintf(stderr, "Failed to find suitable memory type!");
-    exit(EXIT_FAILURE);
-}
 
 
 VkVertexInputBindingDescription get_binding_description() {

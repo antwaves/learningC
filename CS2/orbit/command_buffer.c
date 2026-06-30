@@ -21,6 +21,7 @@ void _create_command_pools(struct App* self) { // create our command pool, which
         .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO
     };
     VkCommandPoolCreateInfo transfer_command_pool_create_info = {
+        .flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT,
         .queueFamilyIndex = self->transfer_queue_family_index,
         .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO
     };
