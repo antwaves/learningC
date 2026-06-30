@@ -47,6 +47,8 @@ struct App {
 
     VkBuffer vertex_buffer;
     VkDeviceMemory vertex_buffer_memory;
+    VkBuffer index_buffer;
+    VkDeviceMemory index_buffer_memory;
 
     VkCommandPool graphics_command_pool; 
     VkCommandPool transfer_command_pool;

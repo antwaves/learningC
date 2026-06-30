@@ -28,7 +28,6 @@ void _create_command_pools(struct App* self) { // create our command pool, which
 
     vkCreateCommandPool(self->logical_device, &graphics_command_pool_create_info, NULL, &self->graphics_command_pool);
     vkCreateCommandPool(self->logical_device, &transfer_command_pool_create_info, NULL, &self->transfer_command_pool);
-
 }
 
 
@@ -95,14 +94,15 @@ void _record_command_buffer(struct App* self, uint32_t image_index) { // set the
     vkCmdBindPipeline(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, self->graphics_pipeline);
     const VkDeviceSize offsets = {0};
     vkCmdBindVertexBuffers(cmd_buffer, 0, 1, &self->vertex_buffer, &offsets);
-    
+    vkCmdBindIndexBuffer(cmd_buffer, self->index_buffer, offsets, VK_INDEX_TYPE_UINT16);
+
     VkViewport viewport[] = {{0.0f, 0.0f, (float)self->swap_chain_extent.width, (float)self->swap_chain_extent.height, 0.0f, 1.0f}};
     vkCmdSetViewport(cmd_buffer, 0, 1, viewport);
     VkRect2D scissor[] = {
         {{0, 0}, self->swap_chain_extent}
     };
     vkCmdSetScissor(cmd_buffer, 0, 1, scissor);
-    vkCmdDraw(cmd_buffer, 3, 1, 0, 0); //AAAAAaa
+    vkCmdDrawIndexed(cmd_buffer, sizeof(indices) / sizeof(uint16_t), 1, 0, 0, 0); //AAAAAaa
     vkCmdEndRendering(cmd_buffer);
 
     // after  rendering, transition the swapchain image to vk::ImageLayout::ePresentSrcKHR
