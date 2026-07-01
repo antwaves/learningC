@@ -8,10 +8,15 @@ struct VSOutput {
     float3 color;
 };
 
+struct UniformBufferObject {
+    float2 transformation;
+};
+ConstantBuffer<UniformBufferObject> ubo;
+
 [shader("vertex")]
 VSOutput vert_main(VSInput input) {
     VSOutput output;
-    output.pos = float4(input.in_position, 0.0, 1.0);
+    output.pos = float4(input.in_position + ubo.transformation, 0.0, 1.0);
     output.color = input.in_color;
     return output;
 }

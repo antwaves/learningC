@@ -92,9 +92,10 @@ void _create_graphics_pipeline(struct App* self) { // create the graphics pipeli
         .sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO
     };
     
-    // describes uniforms, but we have none
+    // describes uniforms
     VkPipelineLayoutCreateInfo pipeline_layout_info = {
-        .setLayoutCount = 0, 
+        .setLayoutCount = 1, 
+        .pSetLayouts = &self->descriptor_set_layout,
         .pushConstantRangeCount = 0,
         .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
     };

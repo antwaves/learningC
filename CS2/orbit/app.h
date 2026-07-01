@@ -42,6 +42,7 @@ struct App {
     VkExtent2D swap_chain_extent; 
     VkImageView* swap_chain_image_views; // description of how swapchain images should be interpreted
 
+    VkDescriptorSetLayout descriptor_set_layout;
     VkPipelineLayout pipeline_layout; // describe uniforms in the pipeline
     VkPipeline graphics_pipeline; // describes how to present our vertices to the screen
 
@@ -49,6 +50,10 @@ struct App {
     VkDeviceMemory vertex_buffer_memory;
     VkBuffer index_buffer;
     VkDeviceMemory index_buffer_memory;
+
+    VkBuffer* uniform_buffers;
+    VkDeviceMemory* uniform_buffers_memory;
+    void* uniform_buffers_mapped;
 
     VkCommandPool graphics_command_pool; 
     VkCommandPool transfer_command_pool;

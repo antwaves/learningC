@@ -8,6 +8,7 @@
 #include "physical_device.c"
 #include "logical_device.c"
 #include "swap_chain.c"
+#include "uniform_buffer.c"
 #include "graphics_pipeline.c"
 #include "vertex.c"
 #include "command_buffer.c"
@@ -32,6 +33,7 @@ void _init_vulkan(struct App* self) {
     _create_logical_device(self);
     _create_swap_chain(self);
     _create_image_views(self);
+    _create_descriptor_set_layout(self);
     _create_graphics_pipeline(self);
     _create_command_pools(self);
     _create_vertex_buffer(self);
@@ -101,7 +103,7 @@ struct App* init() {
     struct App app = {
         .run = run,
         .width = 800,
-        .height = 600,
+        .height = 800,
         .log = true,
         .MAX_FRAMES_IN_FLIGHT = 2
     };
@@ -114,3 +116,6 @@ struct App* init() {
 void destroy_app(struct App* a) {
     free(a);
 }
+
+
+// the compute shader is fucking EVIL
