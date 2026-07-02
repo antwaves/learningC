@@ -102,6 +102,7 @@ void _record_command_buffer(struct App* self, uint32_t image_index) { // set the
         {{0, 0}, self->swap_chain_extent}
     };
     vkCmdSetScissor(cmd_buffer, 0, 1, scissor);
+    vkCmdBindDescriptorSets(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, self->pipeline_layout, 0, 1, self->descriptor_sets, 0, NULL);
     vkCmdDrawIndexed(cmd_buffer, sizeof(indices) / sizeof(uint16_t), 1, 0, 0, 0); //AAAAAaa
     vkCmdEndRendering(cmd_buffer);
 

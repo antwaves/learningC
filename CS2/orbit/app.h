@@ -43,6 +43,8 @@ struct App {
     VkImageView* swap_chain_image_views; // description of how swapchain images should be interpreted
 
     VkDescriptorSetLayout descriptor_set_layout;
+    VkDescriptorPool descriptor_pool;
+    VkDescriptorSet* descriptor_sets;
     VkPipelineLayout pipeline_layout; // describe uniforms in the pipeline
     VkPipeline graphics_pipeline; // describes how to present our vertices to the screen
 
