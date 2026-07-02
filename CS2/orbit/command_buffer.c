@@ -60,8 +60,8 @@ void _record_command_buffer(struct App* self, uint32_t image_index) { // set the
         image_index, 
         VK_IMAGE_LAYOUT_UNDEFINED,
         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-        0, 
-        VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, // dstAcessMask
+        VK_ACCESS_2_NONE, 
+        VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT, // dstAcessMask
         VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
         VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT
     );
@@ -95,6 +95,7 @@ void _record_command_buffer(struct App* self, uint32_t image_index) { // set the
     const VkDeviceSize offsets = {0};
     vkCmdBindVertexBuffers(cmd_buffer, 0, 1, &self->vertex_buffer, &offsets);
     vkCmdBindIndexBuffer(cmd_buffer, self->index_buffer, offsets, VK_INDEX_TYPE_UINT16);
+    vkCmdBindDescriptorSets(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, self->pipeline_layout, 0, 1, &self->descriptor_sets[self->frame_index], 0, NULL);
 
     VkViewport viewport[] = {{0.0f, 0.0f, (float)self->swap_chain_extent.width, (float)self->swap_chain_extent.height, 0.0f, 1.0f}};
     vkCmdSetViewport(cmd_buffer, 0, 1, viewport);
@@ -102,7 +103,6 @@ void _record_command_buffer(struct App* self, uint32_t image_index) { // set the
         {{0, 0}, self->swap_chain_extent}
     };
     vkCmdSetScissor(cmd_buffer, 0, 1, scissor);
-    vkCmdBindDescriptorSets(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, self->pipeline_layout, 0, 1, self->descriptor_sets, 0, NULL);
     vkCmdDrawIndexed(cmd_buffer, sizeof(indices) / sizeof(uint16_t), 1, 0, 0, 0); //AAAAAaa
     vkCmdEndRendering(cmd_buffer);
 

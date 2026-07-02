@@ -55,7 +55,7 @@ struct App {
 
     VkBuffer* uniform_buffers;
     VkDeviceMemory* uniform_buffers_memory;
-    void* uniform_buffers_mapped;
+    void** uniform_buffers_mapped;
 
     VkCommandPool graphics_command_pool; 
     VkCommandPool transfer_command_pool;

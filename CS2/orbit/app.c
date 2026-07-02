@@ -33,7 +33,7 @@ void _init_vulkan(struct App* self) {
     _create_logical_device(self);
     _create_swap_chain(self);
     _create_image_views(self);
-    _create_descriptor_set_layout(self, &self->descriptor_set_layout);
+    _create_descriptor_set_layout(self);
     _create_graphics_pipeline(self);
     _create_command_pools(self);
     _create_vertex_buffer(self);

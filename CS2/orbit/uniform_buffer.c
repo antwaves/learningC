@@ -14,7 +14,7 @@ struct uniform_buffer_object {
 };
 
 
-void _create_descriptor_set_layout(struct App* self, VkDescriptorSetLayout* p_layout) {
+void _create_descriptor_set_layout(struct App* self) {
     VkDescriptorSetLayoutBinding ubo_layout_binding = {
         .binding = 0,
         .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
@@ -26,7 +26,7 @@ void _create_descriptor_set_layout(struct App* self, VkDescriptorSetLayout* p_la
         .pBindings = &ubo_layout_binding,
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO
     };
-    vkCreateDescriptorSetLayout(self->logical_device, &layout_info, NULL, p_layout);
+    vkCreateDescriptorSetLayout(self->logical_device, &layout_info, NULL, &self->descriptor_set_layout);
 }
 
 
@@ -34,43 +34,38 @@ void _create_uniform_buffers(struct App* self) {
     VkDeviceSize buffer_size = sizeof(struct uniform_buffer_object);
     self->uniform_buffers = calloc(self->MAX_FRAMES_IN_FLIGHT, sizeof(VkBuffer));
     self->uniform_buffers_memory = calloc(self->MAX_FRAMES_IN_FLIGHT, sizeof(VkDeviceMemory));
-    self->uniform_buffers_mapped = calloc(self->MAX_FRAMES_IN_FLIGHT, buffer_size);
+    self->uniform_buffers_mapped = calloc(self->MAX_FRAMES_IN_FLIGHT, sizeof(void*));
 
     for (size_t i = 0; i <  self->MAX_FRAMES_IN_FLIGHT; i++) {
-        VkBuffer* buffer = &self->uniform_buffers[i];
-        VkDeviceMemory* buffer_memory = &self->uniform_buffers_memory[i];
         int usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
         int memory_properties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-        create_buffer(buffer, buffer_memory, self, buffer_size, usage, memory_properties);
-
-        void* data;
-        vkMapMemory(self->logical_device, *buffer_memory, 0, buffer_size, 0, &data);
+        create_buffer(&self->uniform_buffers[i], &self->uniform_buffers_memory[i], self, buffer_size, usage, memory_properties);
+        vkMapMemory(self->logical_device, self->uniform_buffers_memory[i], 0, buffer_size, 0, &self->uniform_buffers_mapped[i]);
     }
 }
 
 
-void update_uniform_buffer(void* uniform_buffers_mapped, uint32_t current_image) {
+void update_uniform_buffer(void** uniform_buffers_mapped, uint32_t current_image) {
     struct timespec ts;
-    uint64_t current_seconds;
-    static uint64_t start_seconds; 
+    uint64_t current_milliseconds;
+    static uint64_t start_milliseconds; 
     static bool first_call = true;
 
     if (timespec_get(&ts, TIME_UTC) == TIME_UTC){
         if (first_call) {
             first_call = false;
-            start_seconds = ts.tv_sec;
+            start_milliseconds = (uint64_t)ts.tv_sec * 1000 + (ts.tv_nsec / 1000000);
         }
-        current_seconds = ts.tv_sec;
+        current_milliseconds = (uint64_t)ts.tv_sec * 1000 + (ts.tv_nsec / 1000000);
 
     }
-    uint64_t time_elapsed = (current_seconds - start_seconds);
+    uint64_t time_elapsed = (current_milliseconds - start_milliseconds);
 
-    printf("%llu", time_elapsed);
     struct uniform_buffer_object ubo = {0};
-    ubo.transformation[0] = time_elapsed;
-    ubo.transformation[1] = time_elapsed;
+    ubo.transformation[0] = 0.0001 * time_elapsed;
+    ubo.transformation[1] = 0.0001 * time_elapsed;
 
-    memcpy((char*)uniform_buffers_mapped + current_image * sizeof(struct uniform_buffer_object), &ubo, sizeof(ubo));
+    memcpy(uniform_buffers_mapped[current_image], &ubo, sizeof(ubo));
 }
 
 
@@ -93,7 +88,7 @@ void _create_descriptor_pool(struct App* self) {
 void _create_descriptor_sets(struct App* self) {
     VkDescriptorSetLayout* layouts = calloc(self->MAX_FRAMES_IN_FLIGHT, sizeof(VkDescriptorSetLayout));
     for (size_t i = 0; i < self->MAX_FRAMES_IN_FLIGHT; i++) {
-        _create_descriptor_set_layout(self, &layouts[i]);
+       layouts[i] = self->descriptor_set_layout;
     }
     VkDescriptorSetAllocateInfo alloc_info = {
         .descriptorPool = self->descriptor_pool,
@@ -101,9 +96,8 @@ void _create_descriptor_sets(struct App* self) {
         .pSetLayouts = layouts,
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO
     };
-
     self->descriptor_sets = calloc(self->MAX_FRAMES_IN_FLIGHT, sizeof(VkDescriptorSet));
-    vkAllocateDescriptorSets(self->logical_device, &alloc_info, self->descriptor_sets);
+    VkResult r = vkAllocateDescriptorSets(self->logical_device, &alloc_info, self->descriptor_sets);
 
     for (size_t i = 0; i < self->MAX_FRAMES_IN_FLIGHT; i++) {
         VkDescriptorBufferInfo buffer_info = {
