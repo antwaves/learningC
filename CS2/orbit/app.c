@@ -63,9 +63,20 @@ void _clean_up(struct App* self) { // have to destroy things in a specific order
     vkFreeMemory(self->logical_device, self->index_buffer_memory, NULL);
     vkDestroyBuffer(self->logical_device, self->vertex_buffer, NULL);
     vkDestroyBuffer(self->logical_device, self->index_buffer, NULL);
+    vkDestroyDescriptorSetLayout(self->logical_device, self->descriptor_set_layout, NULL);
+    vkDestroyDescriptorPool(self->logical_device, self->descriptor_pool, NULL);
+    for (int i = 0; i < self->MAX_FRAMES_IN_FLIGHT; i++) {
+        vkDestroyBuffer(self->logical_device, self->uniform_buffers[i], NULL);
+        vkFreeMemory(self->logical_device, self->uniform_buffers_memory[i], NULL);
+    }
+    free(self->uniform_buffers);
+    free(self->uniform_buffers_memory);
+    free(self->uniform_buffers_mapped);
+    free(self->descriptor_sets);
     vkDestroyPipelineLayout(self->logical_device, self->pipeline_layout, NULL);
     vkDestroyPipeline(self->logical_device, self->graphics_pipeline, NULL);
     free(self->command_buffers);
+    
     vkDestroyCommandPool(self->logical_device, self->graphics_command_pool, NULL);
     vkDestroyCommandPool(self->logical_device, self->transfer_command_pool, NULL);
 

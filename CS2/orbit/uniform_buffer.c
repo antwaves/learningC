@@ -116,4 +116,6 @@ void _create_descriptor_sets(struct App* self) {
         };
         vkUpdateDescriptorSets(self->logical_device, 1, &desc_write, 0, NULL);
     }
+
+    free(layouts);
 }
