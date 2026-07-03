@@ -46,7 +46,7 @@ void _create_shader_storage_buffers(struct App* self) {
 }
 
 
-void update_shader_storage_buffer(void** uniform_buffers_mapped, uint32_t current_image) {
+void update_shader_storage_buffer(void** shader_storage_buffers_mapped, uint32_t current_image) {
     struct timespec ts;
     uint64_t current_milliseconds;
     static uint64_t start_milliseconds; 
@@ -62,13 +62,13 @@ void update_shader_storage_buffer(void** uniform_buffers_mapped, uint32_t curren
     }
     uint64_t time_elapsed = (current_milliseconds - start_milliseconds);
 
-    struct shader_storage_object* ubos = calloc(VERTEX_COUNT, sizeof(struct shader_storage_object));
+    struct shader_storage_object* ssbos = calloc(VERTEX_COUNT, sizeof(struct shader_storage_object));
     for (int i = 0; i < VERTEX_COUNT; i++) {
-        ubos[i].transformation[0] = 0.0001 * time_elapsed * (i + 1);
-        ubos[i].transformation[1] = 0.0001 * time_elapsed * (i + 1);
+        ssbos[i].transformation[0] = 0.0001 * time_elapsed;
+        ssbos[i].transformation[1] = 0.0001 * time_elapsed;
     }
-    memcpy(uniform_buffers_mapped[current_image], ubos, sizeof(struct shader_storage_object) * VERTEX_COUNT);
-    free(ubos);
+    memcpy(shader_storage_buffers_mapped[current_image], ssbos, sizeof(struct shader_storage_object) * VERTEX_COUNT);
+    free(ssbos);
 }
 
 
@@ -114,7 +114,7 @@ void _create_descriptor_sets(struct App* self) {
             .dstBinding = 0,
             .dstArrayElement = 0,
             .descriptorCount = 1,
-            .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+            .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
             .pBufferInfo = &buffer_info,
             .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET
         };

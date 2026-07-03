@@ -76,12 +76,19 @@ vertex_in_attr_list* get_attribute_descriptions() {
         .format = VK_FORMAT_R32G32B32_SFLOAT, 
         .offset = offsetof(Vertex, color)
     };
+    VkVertexInputAttributeDescription uv = {
+        .location = 2,
+        .binding = 0,
+        .format = VK_FORMAT_R32G32_SFLOAT,
+        .offset = offsetof(Vertex, uv)
+    };
 
     vertex_in_attr_list* binding_description = calloc(1, sizeof(vertex_in_attr_list));
-    binding_description->count = 2;
-    binding_description->attr_descriptions = calloc(2, sizeof(VkVertexInputAttributeDescription));
+    binding_description->count = 3;
+    binding_description->attr_descriptions = calloc(3, sizeof(VkVertexInputAttributeDescription));
     binding_description->attr_descriptions[0] = position;
     binding_description->attr_descriptions[1] = color;
+    binding_description->attr_descriptions[2] = uv;
 
     return binding_description;
 }
