@@ -6,46 +6,47 @@
 #include <stdint.h>
 #include <string.h>
 #include <time.h>
-#include <vcruntime.h>
+
+#define VERTEX_COUNT (sizeof(vertices) / sizeof(Vertex))
 
 
-struct uniform_buffer_object {
+struct shader_storage_object {
     float transformation[2];
 };
 
 
 void _create_descriptor_set_layout(struct App* self) {
-    VkDescriptorSetLayoutBinding ubo_layout_binding = {
+    VkDescriptorSetLayoutBinding ssbo_layout_binding = {
         .binding = 0,
-        .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+        .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
         .descriptorCount = 1,
         .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
     };
     VkDescriptorSetLayoutCreateInfo layout_info = {
         .bindingCount = 1,
-        .pBindings = &ubo_layout_binding,
+        .pBindings = &ssbo_layout_binding,
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO
     };
     vkCreateDescriptorSetLayout(self->logical_device, &layout_info, NULL, &self->descriptor_set_layout);
 }
 
 
-void _create_uniform_buffers(struct App* self) {
-    VkDeviceSize buffer_size = sizeof(struct uniform_buffer_object);
-    self->uniform_buffers = calloc(self->MAX_FRAMES_IN_FLIGHT, sizeof(VkBuffer));
-    self->uniform_buffers_memory = calloc(self->MAX_FRAMES_IN_FLIGHT, sizeof(VkDeviceMemory));
-    self->uniform_buffers_mapped = calloc(self->MAX_FRAMES_IN_FLIGHT, sizeof(void*));
+void _create_shader_storage_buffers(struct App* self) {
+    VkDeviceSize buffer_size = sizeof(struct shader_storage_object) * VERTEX_COUNT;
+    self->shader_storage_buffers = calloc(self->MAX_FRAMES_IN_FLIGHT, sizeof(VkBuffer));
+    self->shader_storage_buffers_memory= calloc(self->MAX_FRAMES_IN_FLIGHT, sizeof(VkDeviceMemory));
+    self->shader_storage_buffers_mapped= calloc(self->MAX_FRAMES_IN_FLIGHT, sizeof(void*));
 
     for (size_t i = 0; i <  self->MAX_FRAMES_IN_FLIGHT; i++) {
-        int usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+        int usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
         int memory_properties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-        create_buffer(&self->uniform_buffers[i], &self->uniform_buffers_memory[i], self, buffer_size, usage, memory_properties);
-        vkMapMemory(self->logical_device, self->uniform_buffers_memory[i], 0, buffer_size, 0, &self->uniform_buffers_mapped[i]);
+        create_buffer(&self->shader_storage_buffers[i], &self->shader_storage_buffers_memory[i], self, buffer_size, usage, memory_properties);
+        vkMapMemory(self->logical_device, self->shader_storage_buffers_memory[i], 0, buffer_size, 0, &self->shader_storage_buffers_mapped[i]);
     }
 }
 
 
-void update_uniform_buffer(void** uniform_buffers_mapped, uint32_t current_image) {
+void update_shader_storage_buffer(void** uniform_buffers_mapped, uint32_t current_image) {
     struct timespec ts;
     uint64_t current_milliseconds;
     static uint64_t start_milliseconds; 
@@ -61,18 +62,20 @@ void update_uniform_buffer(void** uniform_buffers_mapped, uint32_t current_image
     }
     uint64_t time_elapsed = (current_milliseconds - start_milliseconds);
 
-    struct uniform_buffer_object ubo = {0};
-    ubo.transformation[0] = 0.0001 * time_elapsed;
-    ubo.transformation[1] = 0.0001 * time_elapsed;
-
-    memcpy(uniform_buffers_mapped[current_image], &ubo, sizeof(ubo));
+    struct shader_storage_object* ubos = calloc(VERTEX_COUNT, sizeof(struct shader_storage_object));
+    for (int i = 0; i < VERTEX_COUNT; i++) {
+        ubos[i].transformation[0] = 0.0001 * time_elapsed * (i + 1);
+        ubos[i].transformation[1] = 0.0001 * time_elapsed * (i + 1);
+    }
+    memcpy(uniform_buffers_mapped[current_image], ubos, sizeof(struct shader_storage_object) * VERTEX_COUNT);
+    free(ubos);
 }
 
 
 void _create_descriptor_pool(struct App* self) {
     VkDescriptorPoolSize pool_size = { 
-        .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 
-        .descriptorCount = self->MAX_FRAMES_IN_FLIGHT 
+        .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 
+        .descriptorCount = self->MAX_FRAMES_IN_FLIGHT
     };
     VkDescriptorPoolCreateInfo pool_info = {
         .flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT,
@@ -97,14 +100,15 @@ void _create_descriptor_sets(struct App* self) {
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO
     };
     self->descriptor_sets = calloc(self->MAX_FRAMES_IN_FLIGHT, sizeof(VkDescriptorSet));
-    VkResult r = vkAllocateDescriptorSets(self->logical_device, &alloc_info, self->descriptor_sets);
+    vkAllocateDescriptorSets(self->logical_device, &alloc_info, self->descriptor_sets);
 
     for (size_t i = 0; i < self->MAX_FRAMES_IN_FLIGHT; i++) {
         VkDescriptorBufferInfo buffer_info = {
-            .buffer = self->uniform_buffers[i],
-            .offset = 0, 
-            .range = sizeof(struct uniform_buffer_object)
+            .buffer = self->shader_storage_buffers[i],
+            .offset = 0,
+            .range = sizeof(struct shader_storage_object) * VERTEX_COUNT 
         };
+
         VkWriteDescriptorSet desc_write = {
             .dstSet = self->descriptor_sets[i],
             .dstBinding = 0,
@@ -114,6 +118,7 @@ void _create_descriptor_sets(struct App* self) {
             .pBufferInfo = &buffer_info,
             .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET
         };
+
         vkUpdateDescriptorSets(self->logical_device, 1, &desc_write, 0, NULL);
     }
 

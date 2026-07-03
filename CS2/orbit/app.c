@@ -8,7 +8,7 @@
 #include "physical_device.c"
 #include "logical_device.c"
 #include "swap_chain.c"
-#include "uniform_buffer.c"
+#include "shader_storage_buffer.c"
 #include "graphics_pipeline.c"
 #include "vertex.c"
 #include "command_buffer.c"
@@ -38,7 +38,7 @@ void _init_vulkan(struct App* self) {
     _create_command_pools(self);
     _create_vertex_buffer(self);
     _create_index_buffer(self);
-    _create_uniform_buffers(self);
+    _create_shader_storage_buffers(self);
     _create_descriptor_pool(self);
     _create_descriptor_sets(self);
     _create_command_buffers(self);
@@ -65,13 +65,13 @@ void _clean_up(struct App* self) { // have to destroy things in a specific order
     vkDestroyBuffer(self->logical_device, self->index_buffer, NULL);
     vkDestroyDescriptorSetLayout(self->logical_device, self->descriptor_set_layout, NULL);
     vkDestroyDescriptorPool(self->logical_device, self->descriptor_pool, NULL);
-    for (int i = 0; i < self->MAX_FRAMES_IN_FLIGHT; i++) {
-        vkDestroyBuffer(self->logical_device, self->uniform_buffers[i], NULL);
-        vkFreeMemory(self->logical_device, self->uniform_buffers_memory[i], NULL);
+    for (int i = 0; i < self->MAX_FRAMES_IN_FLIGHT; i++) { // TODO: UPDATE ME ONCE ITS TIMES
+        vkDestroyBuffer(self->logical_device, self->shader_storage_buffers[i], NULL);
+        vkFreeMemory(self->logical_device, self->shader_storage_buffers_memory[i], NULL);
     }
-    free(self->uniform_buffers);
-    free(self->uniform_buffers_memory);
-    free(self->uniform_buffers_mapped);
+    free(self->shader_storage_buffers);
+    free(self->shader_storage_buffers_memory);
+    free(self->shader_storage_buffers_mapped);
     free(self->descriptor_sets);
     vkDestroyPipelineLayout(self->logical_device, self->pipeline_layout, NULL);
     vkDestroyPipeline(self->logical_device, self->graphics_pipeline, NULL);
@@ -130,6 +130,3 @@ struct App* init() {
 void destroy_app(struct App* a) {
     free(a);
 }
-
-
-// the compute shader is fucking EVIL

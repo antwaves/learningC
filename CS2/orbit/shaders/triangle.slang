@@ -8,15 +8,15 @@ struct VSOutput {
     float3 color;
 };
 
-struct UniformBufferObject {
+struct TransformationSSBO {
     float2 transformation;
 };
-ConstantBuffer<UniformBufferObject> ubo[];
+StructuredBuffer<TransformationSSBO> transformations;
 
 [shader("vertex")]
-VSOutput vert_main(VSInput input) {
+VSOutput vert_main(VSInput input, uint vid: SV_VertexID) {
     VSOutput output;
-    output.pos = float4(input.in_position + ubo[0].transformation, 0.0, 1.0);
+    output.pos = float4(input.in_position + transformations[vid].transformation, 0.0, 1.0);
     output.color = input.in_color;
     return output;
 }

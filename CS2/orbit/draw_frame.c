@@ -7,7 +7,7 @@
 #include "app.h"
 #include "command_buffer.h"
 #include "swap_chain.h"
-#include "uniform_buffer.h"
+#include "shader_storage_buffer.h"
 
 void _draw_frame(struct App* self);
 void _create_sync_objects(struct App* self);
@@ -36,7 +36,7 @@ void _draw_frame(struct App* self) { // draw a frame
     VkCommandBufferResetFlags reset_flags = {0};
     vkResetCommandBuffer(self->command_buffers[self->frame_index], reset_flags);
 
-    update_uniform_buffer(self->uniform_buffers_mapped, self->frame_index);
+    update_shader_storage_buffer(self->shader_storage_buffers_mapped, self->frame_index);
 
     // record the command buffer, with the commands drawiing the scene onto the swapchain image
     _record_command_buffer(self, image_index);
