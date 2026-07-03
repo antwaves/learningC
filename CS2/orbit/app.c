@@ -118,7 +118,7 @@ struct App* init() {
         .run = run,
         .width = 800,
         .height = 800,
-        .log = true,
+        .log = false,
         .MAX_FRAMES_IN_FLIGHT = 2
     };
     struct App* a = calloc(1, sizeof(app));

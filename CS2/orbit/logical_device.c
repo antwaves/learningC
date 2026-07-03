@@ -1,10 +1,10 @@
+#include <vulkan/vulkan_core.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
-#include <xkeycheck.h>
 
 #include "app.h"
-#include "vulkan/vulkan_core.h"
+#include "feature_chain.h"
 
 bool get_graphics_queue_index(VkQueueFamilyProperties2* queue_family_properties, uint32_t queue_family_count, uint32_t* index, struct App* self);
 bool get_transfer_queue_index(VkQueueFamilyProperties2* queue_family_properties, uint32_t queue_family_count, uint32_t* p_index);
@@ -65,10 +65,6 @@ void _create_logical_device(struct App* self) { // create the logical device, wh
     
 
     // stucture chain that enables features ( extended dynamic state, shader draw parameters, dynamic rendering and synchronization 2)
-    VkPhysicalDeviceExtendedDynamicStateFeaturesEXT dynamic_features = {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT, .pNext = NULL, .extendedDynamicState=true}; 
-    VkPhysicalDeviceVulkan11Features vulkan11_features = {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES, .pNext = &dynamic_features, .shaderDrawParameters=true};
-    VkPhysicalDeviceVulkan13Features vulkan13_features = {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES, .pNext = &vulkan11_features, .dynamicRendering=true, .synchronization2=true};  
-    VkPhysicalDeviceFeatures2 feature_chain = {.sType=VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2, .pNext =&vulkan13_features}; // this sucks
     const char *required_device_extensions[] = {VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME};
     uint32_t ext_count = sizeof(required_device_extensions) / sizeof(char*);
     VkDeviceCreateInfo device_create_info = {.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,

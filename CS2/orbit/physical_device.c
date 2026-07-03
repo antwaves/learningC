@@ -1,5 +1,7 @@
 #include "app.h"
+#include "feature_chain.h"
 
+#include <vulkan/vulkan_core.h>
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -69,13 +71,9 @@ static bool is_device_suitable(VkPhysicalDevice* device) { // checks if a physic
         }
         has_needed_extensions = has_needed_extensions && has_extension;
     }
-    // stucture chain that checks features ( extended dynamic state, shader draw parameters, dynamic rendering and synchronization 2)
-    VkPhysicalDeviceExtendedDynamicStateFeaturesEXT dynamic_features = {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT, .pNext = NULL, .extendedDynamicState=true};
-    VkPhysicalDeviceVulkan11Features vulkan11_features = {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES, .pNext = &dynamic_features, .shaderDrawParameters=true};
-    VkPhysicalDeviceVulkan13Features vulkan13_features = {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES, .pNext = &vulkan11_features, .dynamicRendering=true, .synchronization2=true};  
-    VkPhysicalDeviceFeatures2 feature_chain = {.sType=VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2, .pNext =&vulkan13_features};
     vkGetPhysicalDeviceFeatures2(*device, &feature_chain);
-    bool has_needed_features = vulkan11_features.shaderDrawParameters && vulkan13_features.dynamicRendering && dynamic_features.extendedDynamicState && vulkan13_features.synchronization2;
+    bool has_needed_features = vulkan11_features.shaderDrawParameters && vulkan12_features.runtimeDescriptorArray && vulkan13_features.dynamicRendering \
+                               && dynamic_features.extendedDynamicState && vulkan13_features.synchronization2;
 
     is_suitable = supports_vulkan1_3 && supports_graphics && has_needed_extensions && has_needed_features;
     free(p_properties);
