@@ -28,7 +28,7 @@ VSOutput vert_main(VSInput input, uint vid: SV_VertexID) {
 float4 frag_main(VSOutput vert_in) : SV_Target {
     float2 center = vert_in.uv * 2.0 - 1.0;
     float dist = length(center);
-    float radius = 0.75;
+    float radius = 1;
     float edgeSoftness = 0.01;
     float alpha = smoothstep(radius, radius - edgeSoftness, dist);
     return float4(vert_in.color, alpha);

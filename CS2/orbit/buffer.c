@@ -6,7 +6,10 @@
 #include "vulkan/vulkan_core.h"
 
 
-void create_buffer(VkBuffer* p_buffer, VkDeviceMemory* p_buffer_memory, struct App* app, VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties) {
+bool create_buffer(VkBuffer* p_buffer, VkDeviceMemory* p_buffer_memory, struct App* app, VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties) {
+    if (size <= 0) {
+        return false;
+    }
     uint32_t queue_family_indices[] = {app->graphics_queue_family_index, app->transfer_queue_family_index};
     uint32_t queue_family_index_count = 1 + (app->graphics_queue_family_index != app->transfer_queue_family_index);
     int sharing_mode = app->graphics_queue_family_index == app->transfer_queue_family_index ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT;
@@ -30,6 +33,7 @@ void create_buffer(VkBuffer* p_buffer, VkDeviceMemory* p_buffer_memory, struct A
     };
     vkAllocateMemory(app->logical_device, &alloc_info, NULL, p_buffer_memory);
     vkBindBufferMemory(app->logical_device, *p_buffer, *p_buffer_memory, 0);
+    return true;
 }
 
 

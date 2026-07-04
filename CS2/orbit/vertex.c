@@ -11,14 +11,17 @@
 void _create_vertex_buffer(struct App* self) {
     int buffer_usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     int mem_properties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    VkDeviceSize buffer_size = sizeof(vertices);
+    VkDeviceSize buffer_size = self->vertex_count * sizeof(Vertex);
     VkBuffer staging_buffer;
     VkDeviceMemory staging_buffer_memory;
-    create_buffer(&staging_buffer, &staging_buffer_memory, self, buffer_size, buffer_usage, mem_properties);
+    bool success = create_buffer(&staging_buffer, &staging_buffer_memory, self, buffer_size, buffer_usage, mem_properties);
     
+    if (!success) {
+        return;
+    }
     void* data;
     vkMapMemory(self->logical_device, staging_buffer_memory, 0, buffer_size , 0, &data);
-    memcpy(data, vertices, buffer_size);
+    memcpy(data, self->vertices, buffer_size);
     vkUnmapMemory(self->logical_device, staging_buffer_memory);
 
     buffer_usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
@@ -32,16 +35,18 @@ void _create_vertex_buffer(struct App* self) {
 
 
 void _create_index_buffer(struct App* self) {
-    VkDeviceSize buffer_size = sizeof(indices);
+    VkDeviceSize buffer_size = self->index_count * sizeof(uint16_t);
     int buffer_usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     int mem_properties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     VkBuffer staging_buffer;
     VkDeviceMemory staging_buffer_memory;
-    create_buffer(&staging_buffer, &staging_buffer_memory, self, buffer_size, buffer_usage, mem_properties);
-
+    bool success = create_buffer(&staging_buffer, &staging_buffer_memory, self, buffer_size, buffer_usage, mem_properties);
+    if (!success) {
+        return;
+    }
     void* data;
     vkMapMemory(self->logical_device, staging_buffer_memory, 0, buffer_size , 0, &data);
-    memcpy(data, indices, buffer_size);
+    memcpy(data, self->indices, buffer_size);
     vkUnmapMemory(self->logical_device, staging_buffer_memory);
 
     buffer_usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;

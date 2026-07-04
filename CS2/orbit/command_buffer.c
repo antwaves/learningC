@@ -93,8 +93,10 @@ void _record_command_buffer(struct App* self, uint32_t image_index) { // set the
     vkCmdBeginRendering(cmd_buffer, &rendering_info);
     vkCmdBindPipeline(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, self->graphics_pipeline);
     const VkDeviceSize offsets = {0};
-    vkCmdBindVertexBuffers(cmd_buffer, 0, 1, &self->vertex_buffer, &offsets);
-    vkCmdBindIndexBuffer(cmd_buffer, self->index_buffer, offsets, VK_INDEX_TYPE_UINT16);
+    if (self->vertex_count > 0 && self->index_count > 0) {
+        vkCmdBindVertexBuffers(cmd_buffer, 0, 1, &self->vertex_buffer, &offsets);
+        vkCmdBindIndexBuffer(cmd_buffer, self->index_buffer, offsets, VK_INDEX_TYPE_UINT16);
+    }
     vkCmdBindDescriptorSets(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, self->pipeline_layout, 0, 1, &self->descriptor_sets[self->frame_index], 0, NULL);
 
     VkViewport viewport[] = {{0.0f, 0.0f, (float)self->swap_chain_extent.width, (float)self->swap_chain_extent.height, 0.0f, 1.0f}};
@@ -103,7 +105,9 @@ void _record_command_buffer(struct App* self, uint32_t image_index) { // set the
         {{0, 0}, self->swap_chain_extent}
     };
     vkCmdSetScissor(cmd_buffer, 0, 1, scissor);
-    vkCmdDrawIndexed(cmd_buffer, sizeof(indices) / sizeof(uint16_t), 1, 0, 0, 0); //AAAAAaa
+    if (self->index_count > 0) {
+        vkCmdDrawIndexed(cmd_buffer, self->index_count / sizeof(uint16_t), 1, 0, 0, 0); //AAAAAaa
+    }
     vkCmdEndRendering(cmd_buffer);
 
     // after  rendering, transition the swapchain image to vk::ImageLayout::ePresentSrcKHR

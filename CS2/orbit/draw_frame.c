@@ -36,9 +36,9 @@ void _draw_frame(struct App* self) { // draw a frame
     VkCommandBufferResetFlags reset_flags = {0};
     vkResetCommandBuffer(self->command_buffers[self->frame_index], reset_flags);
 
-    update_shader_storage_buffer(self->shader_storage_buffers_mapped, self->frame_index);
+    update_shader_storage_buffer(self->shader_storage_buffers_mapped, self->frame_index, self->vertex_count);
 
-    // record the command buffer, with the commands drawiing the scene onto the swapchain image
+    // record the command buffer, with the commands drawing the scene onto the swapchain image
     _record_command_buffer(self, image_index);
     VkPipelineStageFlags wait_destination_stage_mask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     const VkSubmitInfo submit_info = {

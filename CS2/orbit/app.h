@@ -1,8 +1,9 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
-#include "vulkan/vulkan_core.h"
+#include <vulkan/vulkan_core.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include "vertex.h"
 
 #ifndef APP
 #define APP
@@ -48,6 +49,11 @@ struct App {
     VkPipelineLayout pipeline_layout; // describe uniforms in the pipeline
     VkPipeline graphics_pipeline; // describes how to present our vertices to the screen
 
+    Vertex* vertices;
+    uint32_t vertex_count;
+    uint16_t* indices;
+    uint64_t index_count;
+    
     VkBuffer vertex_buffer;
     VkDeviceMemory vertex_buffer_memory;
     VkBuffer index_buffer;
