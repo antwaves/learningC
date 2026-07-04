@@ -54,7 +54,7 @@ struct App {
     Vertex* vertices;
     uint32_t vertex_count;
     uint16_t* indices;
-    uint64_t index_count;
+    uint32_t index_count;
     
     VkBuffer vertex_buffer;
     VkDeviceMemory vertex_buffer_memory;

@@ -1,11 +1,11 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <vulkan/vulkan_core.h>
 
 #include "vertex.h"
 #include "app.h"
 #include "buffer.c"
-#include "vulkan/vulkan_core.h"
 
 
 void _create_vertex_buffer(struct App* self) {

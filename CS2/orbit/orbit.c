@@ -13,31 +13,19 @@ int main() {
 
 
 void before_initialization(struct App* self) {
-    Vertex* vertex_staging = calloc(4, sizeof(Vertex));
-    uint16_t* index_staging = calloc(6, sizeof(uint16_t));
-
-    unsigned char color[3] = {20, 20, 20};
-    create_circle(vertex_staging, index_staging, self->window, 400, 400, 100, color);
-
-    free(vertex_staging);
-    free(index_staging);
+    struct Circle c = {.radius = 400, .x = 100, .y = 100, .color  ={20, 20, 20}};
+    create_circle(self, c);
+    struct Circle d = {.radius = 40, .x = 10, .y = 10, .color = {10, 20, 100}};
+    create_circle(self, d);
 }
 
 
 void before_draw(struct App* self) {
-
     if (self->frame_buffer_resized) {
-        Vertex* vertex_staging = calloc(4, sizeof(Vertex));
-        uint16_t* index_staging = calloc(6, sizeof(uint16_t));
-
-
-        unsigned char color[3] = {20, 20, 20};
-        create_circle(vertex_staging, index_staging, self->window, 400, 400, 100, color);
-        printf("%d %f", index_staging[2], vertex_staging[0].color[0]);
-
-        free(vertex_staging);
-        free(index_staging);
+        free(self->vertices);
+        free(self->indices);
+        struct Circle c = {.radius = 400, .x = 100, .y = 100, .color  ={20, 20, 20}};
+        create_circle(self, c);
     }
-
 }
 

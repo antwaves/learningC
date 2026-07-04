@@ -104,7 +104,7 @@ void _record_command_buffer(struct App* self, uint32_t image_index) { // set the
     };
     vkCmdSetScissor(cmd_buffer, 0, 1, scissor);
     if (self->index_count > 0) {
-        vkCmdDrawIndexed(cmd_buffer, self->index_count / sizeof(uint16_t), 1, 0, 0, 0); //AAAAAaa
+        vkCmdDrawIndexed(cmd_buffer, self->index_count, 1, 0, 0, 0); //AAAAAaa
     }
 
     vkCmdEndRendering(cmd_buffer);

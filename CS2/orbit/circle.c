@@ -1,7 +1,15 @@
 #include <stdint.h>
 #include <GLFW/glfw3.h>
+#include <string.h>
+#include <cglm/cglm.h>
 
+#include "app.h"
 #include "vertex.h"
+
+
+struct Circle;
+void create_circle_vertices(Vertex* vertex_staging_buffer, uint16_t* index_staging_buffer, GLFWwindow* window, struct Circle c);
+
 
 struct Circle {
     uint16_t radius;
@@ -11,21 +19,77 @@ struct Circle {
 };
 
 
-void create_circle(Vertex* vertex_staging_buffer, uint16_t* index_staging_buffer, GLFWwindow* window, uint16_t x, uint16_t y, uint16_t radius, unsigned char c_color[3]) {
+
+void create_circle(struct App* self, struct Circle c) {
+    Vertex* vertex_staging = calloc(4, sizeof(Vertex));
+    uint16_t* index_staging = calloc(6, sizeof(uint16_t));
+    create_circle_vertices(vertex_staging, index_staging, self->window, c);
+
+    uint16_t new_start_index = self->vertex_count;
+    for (int i = 0; i < 6; i++) {
+        index_staging[i] += new_start_index;
+    }
+
+    int original_v_size = self->vertex_count * sizeof(Vertex);
+    int original_i_size = self->index_count * sizeof(uint16_t);
+
+    Vertex* v_temp = NULL;
+    uint16_t* i_temp = NULL;
+    if (original_v_size != 0 && original_i_size != 0) {
+        v_temp = calloc(self->vertex_count, sizeof(Vertex));
+        i_temp = calloc(self->index_count, sizeof(uint16_t));
+        memcpy(v_temp, self->vertices, original_v_size);
+        memcpy(i_temp, self->indices, original_i_size);
+    }
+    
+
+    self->vertex_count += 4;
+    self->index_count += 6;
+    self->vertices = calloc(self->vertex_count, sizeof(Vertex));
+    self->indices = calloc(self->index_count, sizeof(uint16_t));
+
+    if (v_temp == NULL || i_temp == NULL) {
+        memcpy(self->vertices, v_temp, original_v_size);
+        memcpy(self->indices, i_temp, original_i_size);
+    }
+   
+
+    memcpy((char*)self->vertices + original_v_size, vertex_staging, 4 * sizeof(Vertex));
+    memcpy((char*)self->indices + original_i_size, index_staging, 6 * sizeof(uint16_t));
+    
+    free(vertex_staging);
+    free(index_staging);
+    if (v_temp != NULL) {
+        free(v_temp);
+    }
+    if (i_temp != NULL) {
+        free(i_temp);
+    }
+
+    //create vert-ind
+    //modify vert-ind data based on existing data
+    //copy original vertex-ind data
+    //realloc vertex-ind pointers
+    //memcpy originaly and new data
+    //yay!
+}
+
+
+void create_circle_vertices(Vertex* vertex_staging_buffer, uint16_t* index_staging_buffer, GLFWwindow* window, struct Circle c) {
     uint16_t indices[6] = {0};
     int width = 0, height = 0;
     glfwGetFramebufferSize(window, &width, &height);
 
-    float norm_x = (float)x / width;
-    float norm_y = (float)y / height;
-    float norm_x_radius = (float)radius / width;
-    float norm_y_radius = (float)radius / height;
+    float norm_x = (float)c.x / width;
+    float norm_y = (float)c.y / height;
+    float norm_x_radius = (float)c.radius / width;
+    float norm_y_radius = (float)c.radius / height;
 
-    vec3 c = {(float)c_color[0] / 255, (float)c_color[1] / 255, (float)c_color[2] / 255};
-    Vertex top_left = {{norm_x - norm_x_radius, norm_y - norm_y_radius}, {c[0], c[1], c[2]}, {0.0f, 0.0f}};
-    Vertex top_right = {{norm_x + norm_x_radius, norm_y - norm_y_radius}, {c[0], c[1], c[2]}, {1.0f, 0.0f}};
-    Vertex bottom_right = {{norm_x + norm_x_radius, norm_y + norm_y_radius}, {c[0], c[1], c[2]}, {1.0f, 1.0f}};
-    Vertex bottom_left = {{norm_x - norm_x_radius, norm_y + norm_y_radius}, {c[0], c[1], c[2]}, {0.0f, 1.0f}};
+    vec3 color = {(float)c.color[0] / 255, (float)c.color[1] / 255, (float)c.color[2] / 255};
+    Vertex top_left = {{norm_x - norm_x_radius, norm_y - norm_y_radius}, {color[0], color[1], color[2]}, {0.0f, 0.0f}};
+    Vertex top_right = {{norm_x + norm_x_radius, norm_y - norm_y_radius}, {color[0], color[1], color[2]}, {1.0f, 0.0f}};
+    Vertex bottom_right = {{norm_x + norm_x_radius, norm_y + norm_y_radius}, {color[0], color[1], color[2]}, {1.0f, 1.0f}};
+    Vertex bottom_left = {{norm_x - norm_x_radius, norm_y + norm_y_radius}, {color[0], color[1], color[2]}, {0.0f, 1.0f}};
 
     vertex_staging_buffer[0] = top_left;
     vertex_staging_buffer[1] = top_right;
