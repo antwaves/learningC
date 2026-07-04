@@ -106,7 +106,8 @@ void _create_descriptor_sets(struct App* self) {
     vkAllocateDescriptorSets(self->logical_device, &alloc_info, self->descriptor_sets);
 
     for (size_t i = 0; i < self->MAX_FRAMES_IN_FLIGHT; i++) {
-        if (self->vertex_count <= 0 || self->index_count <= 0) {
+        if (self->shader_storage_buffers[i] == NULL) {
+            printf("WARNING: No SSBO\n");
             break;
         }
 

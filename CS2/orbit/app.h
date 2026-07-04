@@ -23,6 +23,8 @@ struct App {
     uint32_t frame_index;
 
     void (*run)(struct App* self); 
+    void (*before_initialization)(struct App* self);
+    void (*before_draw)(struct App* self);
     struct extension_info extensions; // instance extensions
     GLFWwindow* window;
     VkInstance instance; // connection to the vulkan library
@@ -74,7 +76,7 @@ struct App {
 
 
 void run(struct App* self);
-struct App* init();
+struct App* init(void (*user_before_draw)(struct App* self), void (*user_before_initialization)(struct App* self));
 void destroy_app(struct App* a);
 
 #endif

@@ -53,9 +53,7 @@ void _record_command_buffer(struct App* self, uint32_t image_index) { // set the
         .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO
     };
     vkBeginCommandBuffer(self->command_buffers[self->frame_index], &vk_command_buffer_begin_info); // start reading commands
-
-    // before starting rendering, transition the swapchain image to vk::ImageLayout::eColorAttachmentOptimal
-    _transition_image_layout(
+    _transition_image_layout( // before starting rendering, transition the swapchain image to vk::ImageLayout::eColorAttachmentOptimal
         self,
         image_index, 
         VK_IMAGE_LAYOUT_UNDEFINED,
@@ -93,12 +91,12 @@ void _record_command_buffer(struct App* self, uint32_t image_index) { // set the
     vkCmdBeginRendering(cmd_buffer, &rendering_info);
     vkCmdBindPipeline(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, self->graphics_pipeline);
     const VkDeviceSize offsets = {0};
-    if (self->vertex_count > 0 && self->index_count > 0) {
+
+    if (self->vertex_buffer != NULL && self->index_buffer != NULL) {
         vkCmdBindVertexBuffers(cmd_buffer, 0, 1, &self->vertex_buffer, &offsets);
         vkCmdBindIndexBuffer(cmd_buffer, self->index_buffer, offsets, VK_INDEX_TYPE_UINT16);
+        vkCmdBindDescriptorSets(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, self->pipeline_layout, 0, 1, &self->descriptor_sets[self->frame_index], 0, NULL);
     }
-    vkCmdBindDescriptorSets(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, self->pipeline_layout, 0, 1, &self->descriptor_sets[self->frame_index], 0, NULL);
-
     VkViewport viewport[] = {{0.0f, 0.0f, (float)self->swap_chain_extent.width, (float)self->swap_chain_extent.height, 0.0f, 1.0f}};
     vkCmdSetViewport(cmd_buffer, 0, 1, viewport);
     VkRect2D scissor[] = {
@@ -108,10 +106,9 @@ void _record_command_buffer(struct App* self, uint32_t image_index) { // set the
     if (self->index_count > 0) {
         vkCmdDrawIndexed(cmd_buffer, self->index_count / sizeof(uint16_t), 1, 0, 0, 0); //AAAAAaa
     }
-    vkCmdEndRendering(cmd_buffer);
 
-    // after  rendering, transition the swapchain image to vk::ImageLayout::ePresentSrcKHR
-    _transition_image_layout(
+    vkCmdEndRendering(cmd_buffer);
+    _transition_image_layout( // after rendering, transition the swapchain image to vk::ImageLayout::ePresentSrcKHR
         self,
         image_index, 
         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
@@ -121,7 +118,6 @@ void _record_command_buffer(struct App* self, uint32_t image_index) { // set the
         VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
         VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT
     );
-
     vkEndCommandBuffer(self->command_buffers[self->frame_index]); // stop reading commands
 }
 

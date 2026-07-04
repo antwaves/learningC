@@ -10,6 +10,7 @@ bool create_buffer(VkBuffer* p_buffer, VkDeviceMemory* p_buffer_memory, struct A
     if (size <= 0) {
         return false;
     }
+    
     uint32_t queue_family_indices[] = {app->graphics_queue_family_index, app->transfer_queue_family_index};
     uint32_t queue_family_index_count = 1 + (app->graphics_queue_family_index != app->transfer_queue_family_index);
     int sharing_mode = app->graphics_queue_family_index == app->transfer_queue_family_index ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT;

@@ -49,6 +49,9 @@ void _init_vulkan(struct App* self) {
 void _main_loop(struct App* self) {
     while (!glfwWindowShouldClose(self->window)) {
         glfwPollEvents();
+        if (self->before_draw != NULL) {
+            self->before_draw(self);
+        }
         _draw_frame(self);
     }
 }
@@ -107,19 +110,24 @@ void _clean_up(struct App* self) { // have to destroy things in a specific order
 
 void run(struct App* self) {
     _init_window(self);
+    if (self->before_initialization != NULL) {
+        self->before_initialization(self);
+    }
     _init_vulkan(self);
     _main_loop(self);
     _clean_up(self);
 }
 
 
-struct App* init() {
+struct App* init(void (*user_before_initialization)(struct App* self), void (*user_before_draw)(struct App* self)) {
     struct App app = {
         .run = run,
         .width = 800,
         .height = 800,
         .log = false,
-        .MAX_FRAMES_IN_FLIGHT = 2
+        .MAX_FRAMES_IN_FLIGHT = 2,
+        .before_initialization = user_before_initialization,
+        .before_draw = user_before_draw
     };
     struct App* a = calloc(1, sizeof(app));
     memcpy(a, &app, sizeof(app));

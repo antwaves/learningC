@@ -15,10 +15,11 @@ void _create_vertex_buffer(struct App* self) {
     VkBuffer staging_buffer;
     VkDeviceMemory staging_buffer_memory;
     bool success = create_buffer(&staging_buffer, &staging_buffer_memory, self, buffer_size, buffer_usage, mem_properties);
-    
     if (!success) {
+        printf("WARNING: Missing vertices\n");
         return;
     }
+
     void* data;
     vkMapMemory(self->logical_device, staging_buffer_memory, 0, buffer_size , 0, &data);
     memcpy(data, self->vertices, buffer_size);
@@ -42,8 +43,10 @@ void _create_index_buffer(struct App* self) {
     VkDeviceMemory staging_buffer_memory;
     bool success = create_buffer(&staging_buffer, &staging_buffer_memory, self, buffer_size, buffer_usage, mem_properties);
     if (!success) {
+        printf("WARNING: Missing indices\n");
         return;
     }
+
     void* data;
     vkMapMemory(self->logical_device, staging_buffer_memory, 0, buffer_size , 0, &data);
     memcpy(data, self->indices, buffer_size);
