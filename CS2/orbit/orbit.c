@@ -1,9 +1,10 @@
 #include "app.c"
 #include "circle.c"
+#include <time.h>
 
-void before_initialization(struct App* self);
-void before_draw(struct App* self);
-
+void before_initialization(struct App* app);
+void before_draw(struct App* app);
+void handle_recreation(struct App* app);
 
 int main() {
     struct App* app = init(before_initialization, before_draw);
@@ -12,20 +13,33 @@ int main() {
 }
 
 
-void before_initialization(struct App* self) {
-    struct Circle c = {.radius = 400, .x = 100, .y = 100, .color  ={20, 20, 20}};
-    create_circle(self, c);
-    struct Circle d = {.radius = 40, .x = 10, .y = 10, .color = {10, 20, 100}};
-    create_circle(self, d);
+void before_initialization(struct App* app) {
+    handle_recreation(app);
 }
 
 
-void before_draw(struct App* self) {
-    if (self->frame_buffer_resized) {
-        free(self->vertices);
-        free(self->indices);
-        struct Circle c = {.radius = 400, .x = 100, .y = 100, .color  ={20, 20, 20}};
-        create_circle(self, c);
+void before_draw(struct App* app) {
+    if (app->frame_buffer_resized) {
+        printf("called!");
+        handle_recreation(app);
     }
 }
 
+
+void after_resize(struct App* app) {
+    handle_recreation(app);
+}
+
+
+void handle_recreation(struct App* app) {
+    if (app->vertices != NULL && app->indices != NULL) {
+        free(app->vertices);
+        free(app->indices);
+        app->vertices = NULL;
+        app->indices = NULL;
+    }
+    app->index_count = 0;
+    app->vertex_count = 0;
+    struct Circle d = {.radius = 40, .x = 10, .y = 10, .color = {10, 20, 100}};
+    create_circle(app, d);
+}

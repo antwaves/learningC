@@ -30,48 +30,16 @@ void create_circle(struct App* self, struct Circle c) {
         index_staging[i] += new_start_index;
     }
 
-    int original_v_size = self->vertex_count * sizeof(Vertex);
-    int original_i_size = self->index_count * sizeof(uint16_t);
-
-    Vertex* v_temp = NULL;
-    uint16_t* i_temp = NULL;
-    if (original_v_size != 0 && original_i_size != 0) {
-        v_temp = calloc(self->vertex_count, sizeof(Vertex));
-        i_temp = calloc(self->index_count, sizeof(uint16_t));
-        memcpy(v_temp, self->vertices, original_v_size);
-        memcpy(i_temp, self->indices, original_i_size);
-    }
-    
-
     self->vertex_count += 4;
     self->index_count += 6;
     self->vertices = calloc(self->vertex_count, sizeof(Vertex));
     self->indices = calloc(self->index_count, sizeof(uint16_t));
 
-    if (v_temp == NULL || i_temp == NULL) {
-        memcpy(self->vertices, v_temp, original_v_size);
-        memcpy(self->indices, i_temp, original_i_size);
-    }
-   
-
-    memcpy((char*)self->vertices + original_v_size, vertex_staging, 4 * sizeof(Vertex));
-    memcpy((char*)self->indices + original_i_size, index_staging, 6 * sizeof(uint16_t));
+    memcpy((char*)self->vertices, vertex_staging, 4 * sizeof(Vertex));
+    memcpy((char*)self->indices, index_staging, 6 * sizeof(uint16_t));
     
     free(vertex_staging);
     free(index_staging);
-    if (v_temp != NULL) {
-        free(v_temp);
-    }
-    if (i_temp != NULL) {
-        free(i_temp);
-    }
-
-    //create vert-ind
-    //modify vert-ind data based on existing data
-    //copy original vertex-ind data
-    //realloc vertex-ind pointers
-    //memcpy originaly and new data
-    //yay!
 }
 
 

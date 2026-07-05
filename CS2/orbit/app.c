@@ -8,6 +8,7 @@
 #include "physical_device.c"
 #include "logical_device.c"
 #include "swap_chain.c"
+#include "descriptor_set.c"
 #include "shader_storage_buffer.c"
 #include "graphics_pipeline.c"
 #include "vertex.c"
@@ -127,7 +128,7 @@ struct App* init(void (*user_before_initialization)(struct App* self), void (*us
         .log = false,
         .MAX_FRAMES_IN_FLIGHT = 2,
         .before_initialization = user_before_initialization,
-        .before_draw = user_before_draw
+        .before_draw = user_before_draw,
     };
     struct App* a = calloc(1, sizeof(app));
     memcpy(a, &app, sizeof(app));

@@ -13,12 +13,18 @@ struct VSOutput {
 struct TransformationSSBO {
     float2 transformation;
 };
-StructuredBuffer<TransformationSSBO> transformations;
+
+struct ProjUniformBuffer {
+    float4x4 proj;
+}
+
+[[vk::binding(0)]] StructuredBuffer<TransformationSSBO> transformations;
+[[vk::binding(1)]] ConstantBuffer<ProjUniformBuffer> ubo;
 
 [shader("vertex")]
 VSOutput vert_main(VSInput input, uint vid: SV_VertexID) {
     VSOutput output;
-    output.pos = float4(input.in_position + transformations[vid].transformation, 0.0, 1.0);
+    output.pos = mul(ubo.proj, float4(input.in_position + transformations[vid].transformation, 0.0, 1.0));
     output.color = input.in_color;
     output.uv = input.uv;
     return output;
