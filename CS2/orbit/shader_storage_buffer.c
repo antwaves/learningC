@@ -12,8 +12,8 @@
 void _create_shader_storage_buffers(struct App* self) {
     VkDeviceSize buffer_size = sizeof(struct shader_storage_object) * self->vertex_count;
     self->shader_storage_buffers = calloc(self->MAX_FRAMES_IN_FLIGHT, sizeof(VkBuffer));
-    self->shader_storage_buffers_memory= calloc(self->MAX_FRAMES_IN_FLIGHT, sizeof(VkDeviceMemory));
-    self->shader_storage_buffers_mapped= calloc(self->MAX_FRAMES_IN_FLIGHT, sizeof(void*));
+    self->shader_storage_buffers_memory = calloc(self->MAX_FRAMES_IN_FLIGHT, sizeof(VkDeviceMemory));
+    self->shader_storage_buffers_mapped = calloc(self->MAX_FRAMES_IN_FLIGHT, sizeof(void*));
 
     for (size_t i = 0; i <  self->MAX_FRAMES_IN_FLIGHT; i++) {
         int usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;

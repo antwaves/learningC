@@ -1,5 +1,5 @@
-#ifndef UNIFORM_BUFFERS
-#define UNIFORM_BUFFERS
+#ifndef SHADER_STORAGE_BUFFERS
+#define SHADER_STORAGE_BUFFERS
 #include "app.h"
 
 struct shader_storage_object {

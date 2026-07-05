@@ -15,7 +15,7 @@ struct TransformationSSBO {
 };
 
 struct ProjUniformBuffer {
-    float4x4 proj;
+    column_major float4x4 proj;
 }
 
 [[vk::binding(0)]] StructuredBuffer<TransformationSSBO> transformations;

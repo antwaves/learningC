@@ -20,7 +20,6 @@ void before_initialization(struct App* app) {
 
 void before_draw(struct App* app) {
     if (app->frame_buffer_resized) {
-        printf("called!");
         handle_recreation(app);
     }
 }
