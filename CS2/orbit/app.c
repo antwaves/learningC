@@ -14,7 +14,7 @@
 #include "graphics_pipeline.c"
 #include "vertex.c"
 #include "command_buffer.c"
-#include "draw_frame.c"
+#include "draw_thread.c"
 
 
 void _init_window(struct App* self) {
@@ -50,13 +50,17 @@ void _init_vulkan(struct App* self) {
 
 
 void _main_loop(struct App* self) {
+    HANDLE draw_handle;
+    DWORD thread_id;    
+    self->still_running = true;
+    draw_handle = CreateThread(NULL, 0, start_threaded_draw_loop, self, 0, &thread_id);
+
     while (!glfwWindowShouldClose(self->window)) {
         glfwPollEvents();
-        if (self->before_draw != NULL) {
-            self->before_draw(self);
-        }
-        _draw_frame(self);
     }
+    self->still_running = false;
+
+    join_threaded_draw_call(draw_handle);
 }
 
 

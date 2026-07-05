@@ -18,6 +18,7 @@ struct App {
     uint32_t height;
     bool frame_buffer_resized; // whether the window has been resized
     bool log; // config, whether or not to log
+    bool still_running;
 
     const uint32_t MAX_FRAMES_IN_FLIGHT; // max amount of frames processed at once
     uint32_t frame_index;
