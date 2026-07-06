@@ -20,6 +20,7 @@
 
 void _init_window(struct App* self) {
     glfwInit();
+    glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
     self->window = glfwCreateWindow(self->width, self->height, "Vulkan", NULL, NULL);
@@ -55,7 +56,10 @@ void _main_loop(struct App* self) {
     DWORD thread_id;    
     self->still_running = true;
     signal(SIGINT, sig_handler);
+    signal(SIGTERM, sig_handler);
     draw_handle = CreateThread(NULL, 0, start_threaded_draw_loop, self, 0, &thread_id);
+
+    glfwShowWindow(self->window);
 
     while (!glfwWindowShouldClose(self->window) && keep_running) {
         glfwPollEvents();

@@ -30,14 +30,24 @@ void create_circle(struct App* self, struct Circle c) {
         index_staging[i] += new_start_index;
     }
 
+    Vertex* old_vertices = self->vertices;
+    uint16_t* old_indices = self->indices;
+
     self->vertex_count += 4;
     self->index_count += 6;
     self->vertices = calloc(self->vertex_count, sizeof(Vertex));
     self->indices = calloc(self->index_count, sizeof(uint16_t));
 
-    memcpy((char*)self->vertices, vertex_staging, 4 * sizeof(Vertex));
-    memcpy((char*)self->indices, index_staging, 6 * sizeof(uint16_t));
+    if (old_vertices != NULL && old_indices != NULL && self->vertex_count - 4 != 0 && self->index_count - 6 != 0) {
+        memcpy((char*)self->vertices, old_vertices, (sizeof(Vertex) * self->vertex_count - 4));
+        memcpy((char*)self->indices, old_indices, (sizeof(uint16_t) * self->index_count - 6));
+    }
+
+    memcpy(&self->vertices[self->vertex_count - 4], vertex_staging, 4 * sizeof(Vertex));
+    memcpy(&self->indices[self->index_count - 6], index_staging, 6 * sizeof(uint16_t));
     
+    free(old_vertices);
+    free(old_indices);
     free(vertex_staging);
     free(index_staging);
 }
@@ -69,4 +79,3 @@ void create_circle_vertices(Vertex* vertex_staging_buffer, uint16_t* index_stagi
         index_staging_buffer[i] = index_temp[i];
     }
 }
-
