@@ -19,7 +19,6 @@ struct Circle {
 };
 
 
-
 void create_circle(struct App* self, struct Circle c) {
     Vertex* vertex_staging = calloc(4, sizeof(Vertex));
     uint16_t* index_staging = calloc(6, sizeof(uint16_t));

@@ -15,7 +15,6 @@
 #include "vertex.c"
 #include "command_buffer.c"
 #include "draw_thread.c"
-#include "sig_handle.c"
 
 
 void _init_window(struct App* self) {
@@ -23,7 +22,7 @@ void _init_window(struct App* self) {
     glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
-    self->window = glfwCreateWindow(self->width, self->height, "Vulkan", NULL, NULL);
+    self->window = glfwCreateWindow(self->width, self->height, "Orbit", NULL, NULL);
     glfwSetWindowUserPointer(self->window, self);
     glfwSetFramebufferSizeCallback(self->window, framebuffer_resize_callback);
 }
@@ -63,8 +62,11 @@ void _main_loop(struct App* self) {
 
     while (!glfwWindowShouldClose(self->window) && keep_running) {
         glfwPollEvents();
+        glfwGetFramebufferSize(self->window, &self->width, &self->height);
     }
     self->still_running = false;
+    self->width = -1;
+    self->height = -1;
 
     join_threaded_draw_call(draw_handle);
 }

@@ -40,7 +40,7 @@ void handle_recreation(struct App* app) {
     app->index_count = 0;
     app->vertex_count = 0;
     struct Circle d = {.radius = 40, .x = 10, .y = 10, .color = {10, 20, 100}};
-    struct Circle e = {.radius = 60, .x = 100, .y = 100, .color = {100, 20, 100}};
+    struct Circle e = {.radius = 60, .x = 100, .y = 10, .color = {100, 20, 100}};
 
     create_circle(app, d);
     create_circle(app, e);

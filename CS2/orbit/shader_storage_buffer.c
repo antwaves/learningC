@@ -39,7 +39,6 @@ void update_shader_storage_buffer(void** shader_storage_buffers_mapped, uint32_t
             start_milliseconds = (uint64_t)ts.tv_sec * 1000 + (ts.tv_nsec / 1000000);
         }
         current_milliseconds = (uint64_t)ts.tv_sec * 1000 + (ts.tv_nsec / 1000000);
-
     }
     uint64_t time_elapsed = (current_milliseconds - start_milliseconds);
 

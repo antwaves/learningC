@@ -1,10 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
-#include "app.h"
-#include "vulkan/vulkan_core.h"
+#include <vulkan/vulkan_core.h>
 
+#include "app.h"
 #include "swap_chain.h"
+#include "timing.h"
 
 #define clamp(d, min, max) (d < min ? min : d) > max ? max : (d < min ? min : d)
 
@@ -148,12 +149,17 @@ void _cleanup_swap_chain(struct App *self) { // clean up the swap chain, includi
 
 
 void _recreate_swap_chain(struct App* self) { // recreate the swap chain upon a resize
-    int width = 0, height = 0;
-    glfwGetFramebufferSize(self->window, &width, &height);
-    while (width == 0 || height == 0) {
-        glfwGetFramebufferSize(self->window, &width, &height);
-        glfwWaitEvents();
+    struct timespec ts = {};
+    while (self->width == 0 || self->height == 0) {
+        precise_sleep(1.0 / 60.0, &ts);
     }
+    precise_sleep(1.0 / 60.0, &ts);
+
+    if (self->width == -1 || self->height == -1) {
+        printf("escape!");
+        return;
+    }
+
     vkDeviceWaitIdle(self->logical_device);
     _cleanup_swap_chain(self);
     _create_swap_chain(self);

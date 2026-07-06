@@ -14,8 +14,8 @@ struct extension_info {
 };
 
 struct App {
-    uint32_t width; // window width and height
-    uint32_t height;
+    int width; // window width and height
+    int height;
     bool frame_buffer_resized; // whether the window has been resized
     bool log; // config, whether or not to log
     bool still_running;
