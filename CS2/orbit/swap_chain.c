@@ -149,17 +149,6 @@ void _cleanup_swap_chain(struct App *self) { // clean up the swap chain, includi
 
 
 void _recreate_swap_chain(struct App* self) { // recreate the swap chain upon a resize
-    struct timespec ts = {};
-    while (self->width == 0 || self->height == 0) {
-        precise_sleep(1.0 / 60.0, &ts);
-    }
-    precise_sleep(1.0 / 60.0, &ts);
-
-    if (self->width == -1 || self->height == -1) {
-        printf("escape!");
-        return;
-    }
-
     vkDeviceWaitIdle(self->logical_device);
     _cleanup_swap_chain(self);
     _create_swap_chain(self);

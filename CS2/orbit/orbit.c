@@ -1,6 +1,8 @@
 #include "app.c"
 #include "circle.c"
+
 #include <time.h>
+#include <stdatomic.h>
 
 void before_initialization(struct App* app);
 void before_draw(struct App* app);
@@ -19,7 +21,7 @@ void before_initialization(struct App* app) {
 
 
 void before_draw(struct App* app) {
-    if (app->frame_buffer_resized) {
+    if (atomic_load(&app->frame_buffer_resized)) {
         handle_recreation(app);
     }
 }

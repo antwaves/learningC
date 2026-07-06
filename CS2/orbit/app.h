@@ -3,6 +3,7 @@
 #include <vulkan/vulkan_core.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdatomic.h>
 #include "vertex.h"
 
 #ifndef APP
@@ -16,7 +17,8 @@ struct extension_info {
 struct App {
     int width; // window width and height
     int height;
-    bool frame_buffer_resized; // whether the window has been resized
+    atomic_bool minimized;
+    atomic_bool frame_buffer_resized;
     bool log; // config, whether or not to log
     bool still_running;
 

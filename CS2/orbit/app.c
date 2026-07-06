@@ -1,6 +1,7 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 #include <vulkan/vulkan_core.h>
+#include <stdatomic.h>
 
 #include "app.h"
 #include "instance.c"
@@ -62,11 +63,8 @@ void _main_loop(struct App* self) {
 
     while (!glfwWindowShouldClose(self->window) && keep_running) {
         glfwPollEvents();
-        glfwGetFramebufferSize(self->window, &self->width, &self->height);
     }
     self->still_running = false;
-    self->width = -1;
-    self->height = -1;
 
     join_threaded_draw_call(draw_handle);
 }

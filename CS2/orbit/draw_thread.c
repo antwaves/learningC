@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <windows.h>
 #include <time.h>
+#include <stdatomic.h>
 
 #include "app.h"
 #include "draw_frame.c"
@@ -31,7 +32,10 @@ DWORD WINAPI start_threaded_draw_loop(LPVOID still_running) {
 
         uint64_t end_time = get_nanosecond_time(&ts);
         long double elapsed_seconds = (long double)(end_time - start_time) * 1e-9;
-        precise_sleep(1.0 / 60.0 - elapsed_seconds, &ts);
+        if (!atomic_load(&a->frame_buffer_resized)) {
+            precise_sleep(1.0 / 60.0 - elapsed_seconds, &ts);
+
+        }
         prev_time = start_time;
     }
     return 0;
