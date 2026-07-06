@@ -15,6 +15,7 @@
 #include "vertex.c"
 #include "command_buffer.c"
 #include "draw_thread.c"
+#include "sig_handle.c"
 
 
 void _init_window(struct App* self) {
@@ -53,9 +54,10 @@ void _main_loop(struct App* self) {
     HANDLE draw_handle;
     DWORD thread_id;    
     self->still_running = true;
+    signal(SIGINT, sig_handler);
     draw_handle = CreateThread(NULL, 0, start_threaded_draw_loop, self, 0, &thread_id);
 
-    while (!glfwWindowShouldClose(self->window)) {
+    while (!glfwWindowShouldClose(self->window) && keep_running) {
         glfwPollEvents();
     }
     self->still_running = false;
