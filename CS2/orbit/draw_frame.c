@@ -86,10 +86,8 @@ void _draw_frame(struct App* self) { // draw a frame
         return;
     }
     if (result == VK_SUBOPTIMAL_KHR || result == VK_ERROR_OUT_OF_DATE_KHR || atomic_load(&self->frame_buffer_resized)) { // if we've changed window sizes, recreate the swap chain to account for it
-        if (!atomic_load(&self->minimized)) {
             atomic_store(&self->frame_buffer_resized, false);
             _recreate_swap_chain(self);
-        }
     }
     self->frame_index = (self->frame_index + 1) % self->MAX_FRAMES_IN_FLIGHT; // increment our frame index based on our max 
 }

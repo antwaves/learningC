@@ -16,6 +16,7 @@
 #include "vertex.c"
 #include "command_buffer.c"
 #include "draw_thread.c"
+#include "timing.h"
 
 
 void _init_window(struct App* self) {
@@ -140,6 +141,7 @@ void run(struct App* self) {
 
 
 struct App* init(void (*user_before_initialization)(struct App* self), void (*user_before_draw)(struct App* self)) {
+    setup_precise_sleep();
     struct App app = {
         .run = run,
         .width = 800,
@@ -156,5 +158,6 @@ struct App* init(void (*user_before_initialization)(struct App* self), void (*us
 
 
 void destroy_app(struct App* a) {
+    close_precise_sleep();
     free(a);
 }

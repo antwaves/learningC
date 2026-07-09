@@ -19,15 +19,14 @@ DWORD WINAPI start_threaded_draw_loop(LPVOID still_running) {
     struct App* a = ((struct App*)still_running);
     struct timespec ts;
     uint64_t prev_time = get_nanosecond_time(&ts);
+    long double frame_time = 1.0f / 60.0f;
+    long double prev_sleep = 0;
+    long double prev_elapsed;
 
     while (a->still_running && keep_running) {
         uint64_t start_time = get_nanosecond_time(&ts);
         double delta_time = (double)(start_time - prev_time) * 1e-6;
 
-        if (fabs(16.67 - delta_time) > 1) {
-            printf("Took %.2f ms\n", delta_time);
-        }
-        
         if (a->before_draw != NULL) {
             a->before_draw(a);
         }
@@ -36,8 +35,11 @@ DWORD WINAPI start_threaded_draw_loop(LPVOID still_running) {
         uint64_t end_time = get_nanosecond_time(&ts);
         long double elapsed_seconds = (long double)(end_time - start_time) * 1e-9;
         if (!atomic_load(&a->frame_buffer_resized)) {
-            precise_sleep(1.0 / 60.0 - elapsed_seconds, &ts);
-
+            prev_sleep = (frame_time - elapsed_seconds) * 1e3;
+            prev_elapsed = elapsed_seconds * 1e3;
+            if (frame_time - elapsed_seconds > 0) {
+                precise_sleep(frame_time - elapsed_seconds, &ts);
+            }
         }
         prev_time = start_time;
     }
