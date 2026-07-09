@@ -15,8 +15,8 @@ struct extension_info {
 };
 
 struct App {
-    int width; // window width and height
-    int height;
+    atomic_int width; // window width and height
+    atomic_int height;
     atomic_bool minimized;
     atomic_bool frame_buffer_resized;
     bool log; // config, whether or not to log
@@ -24,6 +24,7 @@ struct App {
 
     const uint32_t MAX_FRAMES_IN_FLIGHT; // max amount of frames processed at once
     uint32_t frame_index;
+    uint64_t last_resize;
 
     void (*run)(struct App* self); 
     void (*before_initialization)(struct App* self);
@@ -47,6 +48,7 @@ struct App {
     VkSurfaceFormatKHR swap_chain_surface_format;
     VkExtent2D swap_chain_extent; 
     VkImageView* swap_chain_image_views; // description of how swapchain images should be interpreted
+    VkSwapchainKHR old_chain;
 
     VkDescriptorSetLayout descriptor_set_layout;
     VkDescriptorPool descriptor_pool;

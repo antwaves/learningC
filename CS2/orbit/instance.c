@@ -32,7 +32,7 @@ void _create_instance(struct App* self) { // create the instance which connects 
                                         .pApplicationInfo = &app_info,
                                         .enabledExtensionCount = extension_info.extension_count, 
                                         .ppEnabledExtensionNames = extension_info.extension_names,
-                                        .enabledLayerCount = 1, 
+                                        .enabledLayerCount = (sizeof(validation_layers) / sizeof(char*)) - 1, 
                                         .ppEnabledLayerNames = enable_validation_layers ? validation_layers : NULL
                                     };
     VkResult result = vkCreateInstance(&create_info, NULL, &(self->instance));

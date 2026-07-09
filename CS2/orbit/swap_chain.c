@@ -1,6 +1,9 @@
+#include <stdatomic.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <time.h>
 #include <vulkan/vulkan_core.h>
 
 #include "app.h"
@@ -28,7 +31,10 @@ void _create_swap_chain(struct App* self) {
     // pick surface settings
     VkSurfaceFormatKHR swap_format = choose_swap_surface_format(available_formats, format_count);
     VkPresentModeKHR present_mode = choose_present_mode(available_present_modes, mode_count);
-    VkExtent2D swap_extent = choose_swap_extent(self->width, self->height, surface_capabilities);
+    int width, height = 0;
+    glfwGetFramebufferSize(self->window, &width, &height);
+
+    VkExtent2D swap_extent = choose_swap_extent(atomic_load(&self->width), atomic_load(&self->height), surface_capabilities);
     uint32_t min_image_count = choose_swap_min_image_count(surface_capabilities);
     // change sharing mode based on whether or not a transfer queue is available
     uint32_t queue_family_indices[] = {self->graphics_queue_family_index, self->transfer_queue_family_index};
@@ -51,7 +57,7 @@ void _create_swap_chain(struct App* self) {
         .compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
         .presentMode = present_mode,
         .clipped = true,
-        .oldSwapchain = self->swap_chain // the swap chain that we are replacing, in the case of resizing
+        .oldSwapchain = self->old_chain // the swap chain that we are replacing, in the case of resizing
     };    
     VkResult result = vkCreateSwapchainKHR(self->logical_device, &swap_chain_info, NULL, &self->swap_chain);
     if (result != VK_SUCCESS) {
@@ -79,7 +85,7 @@ static VkSurfaceFormatKHR choose_swap_surface_format(VkSurfaceFormatKHR* availab
     for (int i = 0; i < items; i++) {
         VkSurfaceFormatKHR f = available_formats[i];
         if (f.format == VK_FORMAT_R8G8B8A8_SRGB && f.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)  {
-            format_preferred = &f;
+            format_preferred = &available_formats[i];
             break;
         }
     }
@@ -105,7 +111,7 @@ static VkExtent2D choose_swap_extent(int width, int height, VkSurfaceCapabilitie
     }
     
     VkExtent2D extent = {clamp(width, c.minImageExtent.width, c.maxImageExtent.width), 
-                         clamp(height, c.minImageExtent.height, c.maxImageExtent.width)};
+                         clamp(height, c.minImageExtent.height, c.maxImageExtent.height)};
     return extent;
 }
 
@@ -142,14 +148,28 @@ void _create_image_views(struct App* self) { // create the images that we write 
 void _cleanup_swap_chain_resources(struct App *self) { // clean up the swap chain, including its images
     for (int i = 0; i < self->swap_chain_image_count; i++) { vkDestroyImageView(self->logical_device, self->swap_chain_image_views[i], NULL); }
     free(self->swap_chain_images);
+    free(self->swap_chain_image_views);
+}
+
+
+void destroy_swapchain(VkDevice logical_device, VkSwapchainKHR swap_chain, VkImageView* image_views, VkImage* images, uint32_t count) {
+    for (uint32_t i = 0; i < count; ++i) {
+        vkDestroyImageView(logical_device, image_views[i], NULL);
+    }
+    free(image_views);
+    free(images);
+    vkDestroySwapchainKHR(logical_device, swap_chain, NULL);
 }
 
 
 void _recreate_swap_chain(struct App* self) { // recreate the swap chain upon a resize
-    VkSwapchainKHR old = self->swap_chain;
-    vkDeviceWaitIdle(self->logical_device);
-    _cleanup_swap_chain_resources(self);
+    self->old_chain  = self->swap_chain;
+    VkImageView* old_views = self->swap_chain_image_views;
+    VkImage* old_images = self->swap_chain_images;
+    uint32_t old_count = self->swap_chain_image_count;
+
+    vkQueueWaitIdle(self->graphics_queue);
     _create_swap_chain(self);
     _create_image_views(self);
-    vkDestroySwapchainKHR(self->logical_device, old, NULL);
+    destroy_swapchain(self->logical_device, self->old_chain, old_views, old_images, old_count);
 }

@@ -21,6 +21,9 @@ void _draw_frame(struct App* self) { // draw a frame
     struct timespec ts = {};
     if (atomic_load(&self->minimized)) {
         precise_sleep(0.016, &ts); // Sleep ~16ms if minimized
+        update_uniform_buffers(self->uniform_buffers_mapped, self->frame_index, self->swap_chain_extent);
+        update_shader_storage_buffer(self->shader_storage_buffers_mapped, self->frame_index, self->vertex_count);
+        self->frame_index = (self->frame_index + 1) % self->MAX_FRAMES_IN_FLIGHT;
         return;
     }
 
@@ -30,12 +33,7 @@ void _draw_frame(struct App* self) { // draw a frame
         fprintf(stderr, "Failed to wait on fence!");
         exit(EXIT_FAILURE);
     }
-    if (atomic_load(&self->frame_buffer_resized)) {
-        printf("Swap chain recreation (signal): ");
-        _recreate_swap_chain(self);
-        atomic_store(&self->frame_buffer_resized, false);
-      
-    }
+
     // accquire next swapchain image
     uint32_t image_index = 0;
     result = vkAcquireNextImageKHR(self->logical_device, self->swap_chain, UINT64_MAX, self->present_complete_semaphores[self->frame_index], NULL, &image_index);
@@ -85,10 +83,16 @@ void _draw_frame(struct App* self) { // draw a frame
         precise_sleep(0.016, &ts); // Sleep ~16ms if minimized
         return;
     }
-    if (result == VK_SUBOPTIMAL_KHR || result == VK_ERROR_OUT_OF_DATE_KHR || atomic_load(&self->frame_buffer_resized)) { // if we've changed window sizes, recreate the swap chain to account for it
-            atomic_store(&self->frame_buffer_resized, false);
-            _recreate_swap_chain(self);
+    if (result == VK_ERROR_OUT_OF_DATE_KHR){ // if we've changed window sizes, recreate the swap chain to account for it
+        _recreate_swap_chain(self);
     }
+    
+    uint64_t time = get_nanosecond_time(&ts);
+    uint64_t ms_since_last_resize = (time - self->last_resize) * 1e-6;
+    if (result == VK_SUBOPTIMAL_KHR && ms_since_last_resize > 50) {
+        self->last_resize = time;
+        _recreate_swap_chain(self);
+    } 
     self->frame_index = (self->frame_index + 1) % self->MAX_FRAMES_IN_FLIGHT; // increment our frame index based on our max 
 }
 
@@ -113,8 +117,7 @@ void _create_sync_objects(struct App* self) {
 
 void framebuffer_resize_callback(GLFWwindow* window, int width, int height) { // this is called on GLFW's thread
     struct App* self = (struct App*)(glfwGetWindowUserPointer(window));
-    atomic_store(&self->frame_buffer_resized, true);
     self->width = width;
     self->height = height;
-    atomic_store(&self->minimized, self->width == 0 || self->height == 0);
+    atomic_store(&self->minimized, self->width == 0 || self->height == 0);    
 }
