@@ -7,10 +7,12 @@
 #include "swap_chain.h"
 #include "timing.h"
 
+
 #define clamp(d, min, max) (d < min ? min : d) > max ? max : (d < min ? min : d)
 
 
 void _create_swap_chain(struct App* self) {
+    struct timespec ts;
     // query the surface capabilities
     VkSurfaceCapabilitiesKHR* surface_capabilities = calloc(1, sizeof(VkSurfaceCapabilitiesKHR));
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(self->physical_device, self->surface, surface_capabilities);
@@ -26,7 +28,7 @@ void _create_swap_chain(struct App* self) {
     // pick surface settings
     VkSurfaceFormatKHR swap_format = choose_swap_surface_format(available_formats, format_count);
     VkPresentModeKHR present_mode = choose_present_mode(available_present_modes, mode_count);
-    VkExtent2D swap_extent = choose_swap_extent(self->window, surface_capabilities);
+    VkExtent2D swap_extent = choose_swap_extent(self->width, self->height, surface_capabilities);
     uint32_t min_image_count = choose_swap_min_image_count(surface_capabilities);
     // change sharing mode based on whether or not a transfer queue is available
     uint32_t queue_family_indices[] = {self->graphics_queue_family_index, self->transfer_queue_family_index};
@@ -96,14 +98,12 @@ static VkPresentModeKHR choose_present_mode(VkPresentModeKHR* available_modes, u
 }
 
 
-static VkExtent2D choose_swap_extent(GLFWwindow* window, VkSurfaceCapabilitiesKHR *capabilities) { // choose how large the swap chain surface is
+static VkExtent2D choose_swap_extent(int width, int height, VkSurfaceCapabilitiesKHR *capabilities) { // choose how large the swap chain surface is
     VkSurfaceCapabilitiesKHR c = *capabilities;
     if (c.currentExtent.width !=  UINT32_MAX) { // some window managers use UINT32_MAX to allow us to differ from our capabilities' extent
         return c.currentExtent;
     }
     
-    int width, height;
-    glfwGetFramebufferSize(window, &width, &height);
     VkExtent2D extent = {clamp(width, c.minImageExtent.width, c.maxImageExtent.width), 
                          clamp(height, c.minImageExtent.height, c.maxImageExtent.width)};
     return extent;
@@ -139,18 +139,17 @@ void _create_image_views(struct App* self) { // create the images that we write 
 }
 
 
-void _cleanup_swap_chain(struct App *self) { // clean up the swap chain, including its images
-    vkDeviceWaitIdle(self->logical_device); // need to wait on operations to finish
+void _cleanup_swap_chain_resources(struct App *self) { // clean up the swap chain, including its images
     for (int i = 0; i < self->swap_chain_image_count; i++) { vkDestroyImageView(self->logical_device, self->swap_chain_image_views[i], NULL); }
     free(self->swap_chain_images);
-    vkDestroySwapchainKHR(self->logical_device, self->swap_chain, NULL);
-    self->swap_chain = NULL;
 }
 
 
 void _recreate_swap_chain(struct App* self) { // recreate the swap chain upon a resize
+    VkSwapchainKHR old = self->swap_chain;
     vkDeviceWaitIdle(self->logical_device);
-    _cleanup_swap_chain(self);
+    _cleanup_swap_chain_resources(self);
     _create_swap_chain(self);
     _create_image_views(self);
+    vkDestroySwapchainKHR(self->logical_device, old, NULL);
 }

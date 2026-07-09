@@ -74,7 +74,8 @@ void _clean_up(struct App* self) { // have to destroy things in a specific order
     free(self->extensions.extension_names);
 
     vkDeviceWaitIdle(self->logical_device);
-    _cleanup_swap_chain(self);
+    _cleanup_swap_chain_resources(self);
+    vkDestroySwapchainKHR(self->logical_device, self->swap_chain, NULL);
     vkFreeMemory(self->logical_device, self->vertex_buffer_memory, NULL);
     vkFreeMemory(self->logical_device, self->index_buffer_memory, NULL);
     vkDestroyBuffer(self->logical_device, self->vertex_buffer, NULL);

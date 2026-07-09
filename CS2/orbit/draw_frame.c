@@ -23,12 +23,6 @@ void _draw_frame(struct App* self) { // draw a frame
         precise_sleep(0.016, &ts); // Sleep ~16ms if minimized
         return;
     }
-    if (atomic_load(&self->frame_buffer_resized)) {
-        if (!atomic_load(&self->minimized)) {
-            _recreate_swap_chain(self);
-            atomic_store(&self->frame_buffer_resized, false);
-        }
-    }
 
     // wait for previous frame to finish using a fence
     VkResult result = vkWaitForFences(self->logical_device, 1, &self->in_flight_fences[self->frame_index], VK_TRUE, UINT64_MAX); // make the CPU wait until the previous frame is finished presenting
@@ -36,10 +30,17 @@ void _draw_frame(struct App* self) { // draw a frame
         fprintf(stderr, "Failed to wait on fence!");
         exit(EXIT_FAILURE);
     }
+    if (atomic_load(&self->frame_buffer_resized)) {
+        printf("Swap chain recreation (signal): ");
+        _recreate_swap_chain(self);
+        atomic_store(&self->frame_buffer_resized, false);
+      
+    }
     // accquire next swapchain image
     uint32_t image_index = 0;
     result = vkAcquireNextImageKHR(self->logical_device, self->swap_chain, UINT64_MAX, self->present_complete_semaphores[self->frame_index], NULL, &image_index);
     if (result == VK_ERROR_OUT_OF_DATE_KHR) { // if we've changed window sizes, recreate the swap chain to account for it
+        printf("Swap chain recreation (out of date): \n");
         _recreate_swap_chain(self);
         return;
     }
@@ -118,5 +119,4 @@ void framebuffer_resize_callback(GLFWwindow* window, int width, int height) { //
     self->width = width;
     self->height = height;
     atomic_store(&self->minimized, self->width == 0 || self->height == 0);
-
 }

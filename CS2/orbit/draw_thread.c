@@ -3,6 +3,7 @@
 #include <windows.h>
 #include <time.h>
 #include <stdatomic.h>
+#include <math.h>
 
 #include "app.h"
 #include "draw_frame.c"
@@ -23,8 +24,10 @@ DWORD WINAPI start_threaded_draw_loop(LPVOID still_running) {
         uint64_t start_time = get_nanosecond_time(&ts);
         double delta_time = (double)(start_time - prev_time) * 1e-6;
 
-        printf("Took %.2f ms\n", delta_time);
-
+        if (fabs(16.67 - delta_time) > 1) {
+            printf("Took %.2f ms\n", delta_time);
+        }
+        
         if (a->before_draw != NULL) {
             a->before_draw(a);
         }
