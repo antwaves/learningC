@@ -22,7 +22,7 @@ void _draw_frame(struct App* self) { // draw a frame
     if (atomic_load(&self->minimized)) {
         precise_sleep(0.016, &ts);
         update_uniform_buffers(self->uniform_buffers_mapped, self->frame_index, self->swap_chain_extent);
-        update_shader_storage_buffer(self->shader_storage_buffers_mapped, self->frame_index, self->vertex_count);
+        update_shader_storage_buffer(self->shader_storage_buffers_mapped, self->user_transformations, self->frame_index, self->vertex_count);
         self->frame_index = (self->frame_index + 1) % self->MAX_FRAMES_IN_FLIGHT;
         return;
     }
@@ -51,7 +51,7 @@ void _draw_frame(struct App* self) { // draw a frame
     vkResetCommandBuffer(self->command_buffers[self->frame_index], reset_flags);
 
     update_uniform_buffers(self->uniform_buffers_mapped, self->frame_index, self->swap_chain_extent);
-    update_shader_storage_buffer(self->shader_storage_buffers_mapped, self->frame_index, self->vertex_count);
+    update_shader_storage_buffer(self->shader_storage_buffers_mapped, self->user_transformations, self->frame_index, self->vertex_count);
 
     // record the command buffer, with the commands drawing the scene onto the swapchain image
     _record_command_buffer(self, image_index);

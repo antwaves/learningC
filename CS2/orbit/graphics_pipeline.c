@@ -72,7 +72,7 @@ void _create_graphics_pipeline(struct App* self) { // create the graphics pipeli
         .sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO
     };
     
-    // color blend attachments describe how colors in the fragment shader are mixed
+    // color blend attachments describe how colors in the fragment shader are mixed - blend between vertices
     VkPipelineColorBlendAttachmentState color_blend_attachment = {
         .blendEnable = VK_TRUE,
         .srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA,

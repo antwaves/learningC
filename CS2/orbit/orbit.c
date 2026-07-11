@@ -21,14 +21,32 @@ void before_initialization(struct App* app) {
 
 
 void before_draw(struct App* app) {
+    static float first_trans = 0.0f;
+
+    if (app->user_transformation_count != app->vertex_count || app->user_transformations == NULL) {
+        float** old = app->user_transformations;
+        app->user_transformations = calloc(sizeof(float*), app->vertex_count);
+        if (old != NULL) {
+            free(old);
+            for (int i = 0; i < app->user_transformation_count; i++) {
+                free(old[i]);
+            }
+        }
+        app->user_transformation_count = app->vertex_count;
+        for (int i = 0; i < app->vertex_count; i++) {
+            app->user_transformations[i] = calloc(sizeof(float), 2);
+        }
+    }
+
+    for (int i = 0; i < app->vertex_count; i++) {
+        app->user_transformations[i][0] = first_trans;
+        app->user_transformations[i][1] = first_trans;
+    }
+    first_trans += 0.0001;
+    
     if (atomic_load(&app->frame_buffer_resized)) {
         handle_recreation(app);
     }
-}
-
-
-void after_resize(struct App* app) {
-    handle_recreation(app);
 }
 
 

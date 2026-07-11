@@ -6,6 +6,7 @@
 #include "timing.h"
 #pragma comment(lib, "winmm.lib")
 
+
 uint64_t get_nanosecond_time(struct timespec* ts) {
     static LARGE_INTEGER frequency;
     static int initialized = 0;

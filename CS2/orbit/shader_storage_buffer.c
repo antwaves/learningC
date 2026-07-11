@@ -6,7 +6,6 @@
 #include <vulkan/vulkan_core.h>
 #include <stdint.h>
 #include <string.h>
-#include <time.h>
 
 
 void _create_shader_storage_buffers(struct App* self) {
@@ -27,25 +26,13 @@ void _create_shader_storage_buffers(struct App* self) {
 }
 
 
-void update_shader_storage_buffer(void** shader_storage_buffers_mapped, uint32_t current_image, uint32_t vertex_count) {
-    struct timespec ts;
-    uint64_t current_milliseconds;
-    static uint64_t start_milliseconds; 
-    static bool first_call = true;
-
-    if (timespec_get(&ts, TIME_UTC) == TIME_UTC){
-        if (first_call) {
-            first_call = false;
-            start_milliseconds = (uint64_t)ts.tv_sec * 1000 + (ts.tv_nsec / 1000000);
-        }
-        current_milliseconds = (uint64_t)ts.tv_sec * 1000 + (ts.tv_nsec / 1000000);
-    }
-    uint64_t time_elapsed = (current_milliseconds - start_milliseconds);
-
+void update_shader_storage_buffer(void** shader_storage_buffers_mapped, float** user_transformations, uint32_t current_image, uint32_t vertex_count) {
+    assert (vertex_count % 4 == 0);
+    if (user_transformations == NULL) { return; }
     struct shader_storage_object* ssbos = calloc(vertex_count, sizeof(struct shader_storage_object));
     for (int i = 0; i < vertex_count; i++) {
-        ssbos[i].transformation[0] = 0.0001 * time_elapsed;
-        ssbos[i].transformation[1] = 0.0001 * time_elapsed;
+        ssbos[i].transformation[0] = user_transformations[i][0];
+        ssbos[i].transformation[1] = user_transformations[i][1];
     }
     memcpy(shader_storage_buffers_mapped[current_image], ssbos, sizeof(struct shader_storage_object) * vertex_count);
     free(ssbos);

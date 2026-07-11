@@ -81,6 +81,12 @@ void _init_window(struct App* self) { // inits the glfw window in a hidden state
 
 void _clean_up(struct App* self) { // frees all allocated memory. have to destroy things in a specific order (mostly, logical device dependent things first). must be called before program ends
     free(self->extensions.extension_names);
+    if (self->user_transformations != NULL) {
+        for (int i = 0; i < self->vertex_count; i++) {
+            free(self->user_transformations[i]);
+        }
+        free(self->user_transformations);
+    }
 
     vkDeviceWaitIdle(self->logical_device);
     _cleanup_swap_chain_resources(self);

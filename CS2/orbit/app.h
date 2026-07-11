@@ -73,6 +73,8 @@ struct App {
     VkBuffer* shader_storage_buffers;
     VkDeviceMemory* shader_storage_buffers_memory;
     void** shader_storage_buffers_mapped;
+    float** user_transformations;
+    int user_transformation_count;
 
     VkCommandPool graphics_command_pool; 
     VkCommandPool transfer_command_pool;
