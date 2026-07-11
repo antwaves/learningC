@@ -13,7 +13,7 @@ void _setup_debug_messenger(struct App* self);
 static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT severity, \
                                                      VkDebugUtilsMessageTypeFlagsEXT type, \
                                                      const VkDebugUtilsMessengerCallbackDataEXT* p_callback_data, \
-                                                     void* p_user_data) { // logs warnings/errors. attached to vulkan instance, called when vulkan validation layers detect a problem
+                                                     void* p_user_data) { // debug messenger called by vulkan validation layers when it wants to give a warning. logs warnings/errors.
     if (severity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
         fprintf_s(stderr, "\nValidation Layer: type %u msg: %s\n\n", type, p_callback_data->pMessage);
 
@@ -33,7 +33,7 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(VkDebugUtilsMessageSeverity
 }
 
 
-void check_validation_layers() { // check for validation layer support from our instance
+void check_validation_layers() { // checks for validation layer support from our instance
     VkLayerProperties* layers;
     uint32_t layer_count = 0;
     vkEnumerateInstanceLayerProperties(&layer_count, NULL);
@@ -65,7 +65,6 @@ void _setup_debug_messenger(struct App* self) { // attach the debug callback to 
     if (!enable_validation_layers) return;
 
     LOAD_INSTANCE_EXT(self->instance, vkCreateDebugUtilsMessengerEXT);
-
     if (vkCreateDebugUtilsMessengerEXT == NULL) {
         fprintf_s(stderr, "Missing validation layers.\n");
         exit(EXIT_FAILURE);
@@ -74,12 +73,10 @@ void _setup_debug_messenger(struct App* self) { // attach the debug callback to 
     VkDebugUtilsMessageSeverityFlagsEXT severity_flags = VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | // decides what types of messages get sent to the callback
                                                          VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT |
                                                          VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT ; 
-
     VkDebugUtilsMessageTypeFlagsEXT message_type_flags = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | 
                                                          VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | 
                                                          VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT | 
                                                          VK_DEBUG_UTILS_MESSAGE_TYPE_DEVICE_ADDRESS_BINDING_BIT_EXT;
-
     VkDebugUtilsMessengerCreateInfoEXT debug_utils_messenger_create_info_ext = {
         .messageSeverity = severity_flags,
         .messageType = message_type_flags, 

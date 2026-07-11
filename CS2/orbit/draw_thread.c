@@ -9,9 +9,9 @@
 #include "draw_frame.c"
 #include "timing.c"
 
-static volatile sig_atomic_t keep_running = 1;
-static void sig_handler(int _) {
-    keep_running = 0;
+static volatile sig_atomic_t not_interrupted = 1;
+static void sig_handler(int _) { // catches and handles interrupts to allow for cleanup
+    not_interrupted = 0;
 }
 
 
@@ -21,7 +21,7 @@ DWORD WINAPI start_threaded_draw_loop(LPVOID still_running) {
     uint64_t prev_time = get_nanosecond_time(&ts);
     long double frame_time = 1.0f / 60.0f;
 
-    while (a->still_running && keep_running) {
+    while (a->still_running && not_interrupted) {
         uint64_t start_time = get_nanosecond_time(&ts);
         double delta_time = (double)(start_time - prev_time) * 1e-6;
 

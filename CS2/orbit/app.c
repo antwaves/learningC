@@ -19,18 +19,34 @@
 #include "timing.h"
 
 
-void _init_window(struct App* self) {
-    glfwInit();
-    glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
-    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
-    self->window = glfwCreateWindow(self->width, self->height, "Orbit", NULL, NULL);
-    glfwSetWindowUserPointer(self->window, self);
-    glfwSetFramebufferSizeCallback(self->window, framebuffer_resize_callback);
+void run(struct App* self) {
+    _init_window(self);
+    if (self->before_initialization != NULL) {
+        self->before_initialization(self); // user callback
+    }
+    _init_vulkan(self);
+    _main_loop(self);
+    _clean_up(self);
 }
 
 
-void _init_vulkan(struct App* self) {
+void _main_loop(struct App* self) {
+    HANDLE draw_handle;
+    self->still_running = true;
+    signal(SIGINT, sig_handler);
+    signal(SIGTERM, sig_handler); // attach signal handler to allow for clean up
+
+    draw_handle = CreateThread(NULL, 0, start_threaded_draw_loop, self, 0, NULL);
+    glfwShowWindow(self->window); // wait for images to be presented to display window
+    while (!glfwWindowShouldClose(self->window) && not_interrupted) {
+        glfwPollEvents();
+    }
+    self->still_running = false;
+    join_threaded_draw_call(draw_handle);
+}
+
+
+void _init_vulkan(struct App* self) { // sets up everything vulkan to present images to the window
     _create_instance(self);
     _setup_debug_messenger(self);
     _create_surface(self);
@@ -52,26 +68,18 @@ void _init_vulkan(struct App* self) {
 }
 
 
-void _main_loop(struct App* self) {
-    HANDLE draw_handle;
-    DWORD thread_id;    
-    self->still_running = true;
-    signal(SIGINT, sig_handler);
-    signal(SIGTERM, sig_handler);
-    draw_handle = CreateThread(NULL, 0, start_threaded_draw_loop, self, 0, &thread_id);
-
-    glfwShowWindow(self->window);
-
-    while (!glfwWindowShouldClose(self->window) && keep_running) {
-        glfwPollEvents();
-    }
-    self->still_running = false;
-
-    join_threaded_draw_call(draw_handle);
+void _init_window(struct App* self) { // inits the glfw window in a hidden state
+    glfwInit();
+    glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+    glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
+    self->window = glfwCreateWindow(self->width, self->height, "Orbit", NULL, NULL);
+    glfwSetWindowUserPointer(self->window, self);
+    glfwSetFramebufferSizeCallback(self->window, framebuffer_resize_callback);
 }
 
 
-void _clean_up(struct App* self) { // have to destroy things in a specific order (mostly, logical device dependent things first)
+void _clean_up(struct App* self) { // frees all allocated memory. have to destroy things in a specific order (mostly, logical device dependent things first). must be called before program ends
     free(self->extensions.extension_names);
 
     vkDeviceWaitIdle(self->logical_device);
@@ -129,19 +137,8 @@ void _clean_up(struct App* self) { // have to destroy things in a specific order
 }
 
 
-void run(struct App* self) {
-    _init_window(self);
-    if (self->before_initialization != NULL) {
-        self->before_initialization(self);
-    }
-    _init_vulkan(self);
-    _main_loop(self);
-    _clean_up(self);
-}
-
-
-struct App* init(void (*user_before_initialization)(struct App* self), void (*user_before_draw)(struct App* self)) {
-    setup_precise_sleep();
+struct App* init(void (*user_before_initialization)(struct App* self), void (*user_before_draw)(struct App* self)) { // initalizes the glfw + vulkan wrapper. takes in two function pointers to callbacks
+    setup_precise_sleep(); // needed for frame timing
     struct App app = {
         .run = run,
         .width = 800,
@@ -157,7 +154,7 @@ struct App* init(void (*user_before_initialization)(struct App* self), void (*us
 }
 
 
-void destroy_app(struct App* a) {
-    close_precise_sleep();
+void destroy_app(struct App* a) { // does the freeing that the app can't do itself. must be called by user to prevent memory leaks.
+    close_precise_sleep(); // need to close unless we want to mess with other programs
     free(a);
 }

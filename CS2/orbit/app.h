@@ -85,6 +85,10 @@ struct App {
 
 
 void run(struct App* self);
+void _clean_up(struct App* self);
+void _init_window(struct App* self);
+void _init_vulkan(struct App* self);
+void _main_loop(struct App* self);
 struct App* init(void (*user_before_draw)(struct App* self), void (*user_before_initialization)(struct App* self));
 void destroy_app(struct App* a);
 

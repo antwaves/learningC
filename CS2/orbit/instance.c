@@ -106,7 +106,7 @@ static void check_extensions(const char** glfw_extensions, int glfw_extension_co
 }
 
 
-void _create_surface(struct App* self) { // abstract the GLFW window into a surface, to query capabilites and present images to
+void _create_surface(struct App* self) { // abstract the GLFW window into a surface, to query capabilites and present images
     if (glfwCreateWindowSurface(self->instance, self->window, NULL, &self->surface) != 0) {
         fprintf_s(stderr, "Failed to create window surface!");
         exit(EXIT_FAILURE);

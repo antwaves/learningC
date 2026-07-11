@@ -15,5 +15,3 @@ struct circle_handle {
     uint32_t start_index_range;
     ivec2 transformation;
 };
-
-

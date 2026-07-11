@@ -30,8 +30,7 @@ void _create_graphics_pipeline(struct App* self) { // create the graphics pipeli
     };
     VkPipelineShaderStageCreateInfo shader_stages[] = {vert_shader_stage_info, frag_shader_stage_info};
 
-    // set the viewport (describes the transition from image to framebuffer) and scissor rectangle (describes which parts of framebuffer will be stored) to dynamic
-    // these two will have to be set at draw time
+    // set the viewport (describes the transition from image to framebuffer) and scissor rectangle (describes which parts of framebuffer will be stored) to dynamic (set at draw time) - only really changed for resizes
     VkDynamicState dynamic_states[] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
     VkPipelineDynamicStateCreateInfo dynamic_state = {
         .dynamicStateCount = sizeof(dynamic_states) / sizeof(VkDynamicState), 
@@ -92,7 +91,7 @@ void _create_graphics_pipeline(struct App* self) { // create the graphics pipeli
         .sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO
     };
     
-    // describes uniforms
+    // describes uniforms / ssbo's - this is used for transformations / circle radii
     VkPipelineLayoutCreateInfo pipeline_layout_info = {
         .setLayoutCount = 1, 
         .pSetLayouts = &self->descriptor_set_layout,

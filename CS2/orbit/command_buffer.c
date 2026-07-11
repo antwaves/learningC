@@ -52,7 +52,7 @@ void _record_command_buffer(struct App* self, uint32_t image_index) { // set the
     VkCommandBufferBeginInfo vk_command_buffer_begin_info = { // commands are put into a buffer, then sent all at once
         .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO
     };
-    vkBeginCommandBuffer(self->command_buffers[self->frame_index], &vk_command_buffer_begin_info); // start reading commands
+    vkBeginCommandBuffer(self->command_buffers[self->frame_index], &vk_command_buffer_begin_info); 
     _transition_image_layout( // before starting rendering, transition the swapchain image to vk::ImageLayout::eColorAttachmentOptimal
         self,
         image_index, 
@@ -118,11 +118,11 @@ void _record_command_buffer(struct App* self, uint32_t image_index) { // set the
         VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
         VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT
     );
-    vkEndCommandBuffer(self->command_buffers[self->frame_index]); // stop reading commands
+    vkEndCommandBuffer(self->command_buffers[self->frame_index]);
 }
 
 
-void _transition_image_layout(struct App* self, uint32_t image_index, VkImageLayout old_layout, // transitions between two image layours
+void _transition_image_layout(struct App* self, uint32_t image_index, VkImageLayout old_layout, // transitions between two image layouts
                               VkImageLayout new_layout, VkAccessFlags2 src_access_mask, 
                               VkAccessFlags2 dst_access_mask, VkPipelineStageFlags2 src_stage_mask, 
                               VkPipelineStageFlags2 dst_stage_mask) {

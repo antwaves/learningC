@@ -20,7 +20,7 @@ static void framebuffer_resize_callback(GLFWwindow* window, int width, int heigh
 void _draw_frame(struct App* self) { // draw a frame
     struct timespec ts = {};
     if (atomic_load(&self->minimized)) {
-        precise_sleep(0.016, &ts); // Sleep ~16ms if minimized
+        precise_sleep(0.016, &ts);
         update_uniform_buffers(self->uniform_buffers_mapped, self->frame_index, self->swap_chain_extent);
         update_shader_storage_buffer(self->shader_storage_buffers_mapped, self->frame_index, self->vertex_count);
         self->frame_index = (self->frame_index + 1) % self->MAX_FRAMES_IN_FLIGHT;
@@ -28,7 +28,7 @@ void _draw_frame(struct App* self) { // draw a frame
     }
 
     // wait for previous frame to finish using a fence
-    VkResult result = vkWaitForFences(self->logical_device, 1, &self->in_flight_fences[self->frame_index], VK_TRUE, UINT64_MAX); // make the CPU wait until the previous frame is finished presenting
+    VkResult result = vkWaitForFences(self->logical_device, 1, &self->in_flight_fences[self->frame_index], VK_TRUE, UINT64_MAX); 
     if (result != VK_SUCCESS) { 
         fprintf(stderr, "Failed to wait on fence!");
         exit(EXIT_FAILURE);
@@ -80,10 +80,10 @@ void _draw_frame(struct App* self) { // draw a frame
     // present our image to the queue, which presents it to the screen
     result = vkQueuePresentKHR(self->graphics_queue, &present_info_KHR);
     if (atomic_load(&self->minimized)) {
-        precise_sleep(0.016, &ts); // Sleep ~16ms if minimized
+        precise_sleep(0.016, &ts);
         return;
     }
-    if (result == VK_ERROR_OUT_OF_DATE_KHR){ // if we've changed window sizes, recreate the swap chain to account for it
+    if (result == VK_ERROR_OUT_OF_DATE_KHR){
         _recreate_swap_chain(self);
     }
     
@@ -93,21 +93,20 @@ void _draw_frame(struct App* self) { // draw a frame
         self->last_resize = time;
         _recreate_swap_chain(self);
     } 
-    self->frame_index = (self->frame_index + 1) % self->MAX_FRAMES_IN_FLIGHT; // increment our frame index based on our max 
+    self->frame_index = (self->frame_index + 1) % self->MAX_FRAMES_IN_FLIGHT;
 }
 
 
-void _create_sync_objects(struct App* self) {
+void _create_sync_objects(struct App* self) { // allocated needed sync objects
     VkSemaphoreCreateInfo semaphore_create_info = {.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO};
     VkFenceCreateInfo fence_create_info = {.flags = VK_FENCE_CREATE_SIGNALED_BIT, .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};
-
-    self->render_complete_semaphores = calloc(self->swap_chain_image_count, sizeof(VkSemaphore)); // makes the GPU wait to present an image until it's finished rendering
+    self->render_complete_semaphores = calloc(self->swap_chain_image_count, sizeof(VkSemaphore));
     for (size_t i = 0; i < self->swap_chain_image_count; i++) {
         vkCreateSemaphore(self->logical_device, &semaphore_create_info, NULL, &self->render_complete_semaphores[i]);  
     }
 
-    self->present_complete_semaphores = calloc(self->MAX_FRAMES_IN_FLIGHT, sizeof(VkSemaphore)); // makes the GPU wait for the presentation engine to stop using a image
-    self->in_flight_fences= calloc(self->MAX_FRAMES_IN_FLIGHT, sizeof(VkFence)); // makes the CPU wait to process the next image until the last one has finished presenting
+    self->present_complete_semaphores = calloc(self->MAX_FRAMES_IN_FLIGHT, sizeof(VkSemaphore));
+    self->in_flight_fences= calloc(self->MAX_FRAMES_IN_FLIGHT, sizeof(VkFence));
     for (size_t i = 0; i < self->MAX_FRAMES_IN_FLIGHT; i++) {
         vkCreateSemaphore(self->logical_device, &semaphore_create_info, NULL, &self->present_complete_semaphores[i]);
         vkCreateFence(self->logical_device, &fence_create_info, NULL, &self->in_flight_fences[i]);
@@ -115,7 +114,7 @@ void _create_sync_objects(struct App* self) {
 }
 
 
-void framebuffer_resize_callback(GLFWwindow* window, int width, int height) { // this is called on GLFW's thread
+void framebuffer_resize_callback(GLFWwindow* window, int width, int height) { // called by GLFW (on it's seperate thread) whenever the window is resized
     struct App* self = (struct App*)(glfwGetWindowUserPointer(window));
     self->width = width;
     self->height = height;

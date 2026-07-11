@@ -63,8 +63,6 @@ void _create_logical_device(struct App* self) { // create the logical device, wh
         device_queues_create_infos = &graphics_device_queue_create_info;
     }
     
-
-    // stucture chain that enables features ( extended dynamic state, shader draw parameters, dynamic rendering and synchronization 2)
     const char *required_device_extensions[] = {VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME};
     uint32_t ext_count = sizeof(required_device_extensions) / sizeof(char*);
     VkDeviceCreateInfo device_create_info = {.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
