@@ -19,6 +19,17 @@ struct Circle {
 };
 
 
+struct TransformableCircle {
+    struct Circle circle;
+    float transformation[2];
+};
+
+struct TransformableCircleArr { // replace with orbit list laterrrrrrr
+    struct TransformableCircle* circles;
+    uint32_t count;
+}
+
+
 void create_circle(struct App* self, struct Circle c) {
     Vertex* vertex_staging = calloc(4, sizeof(Vertex));
     uint16_t* index_staging = calloc(6, sizeof(uint16_t));

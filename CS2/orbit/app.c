@@ -22,7 +22,7 @@
 void run(struct App* self) {
     _init_window(self);
     if (self->before_initialization != NULL) {
-        self->before_initialization(self); // user callback
+        self->before_initialization(self, self->before_init_arg); // user callback
     }
     _init_vulkan(self);
     _main_loop(self);
@@ -143,7 +143,7 @@ void _clean_up(struct App* self) { // frees all allocated memory. have to destro
 }
 
 
-struct App* init(void (*user_before_initialization)(struct App* self), void (*user_before_draw)(struct App* self)) { // initalizes the glfw + vulkan wrapper. takes in two function pointers to callbacks
+struct App* init(void (*user_before_initialization)(struct App* self, void* arg), void* before_init_arg, void (*user_before_draw)(struct App* self, void* arg), void* before_draw_arg) { // initalizes the glfw + vulkan wrapper. takes in two function pointers to callbacks
     setup_precise_sleep(); // needed for frame timing
     struct App app = {
         .run = run,
@@ -152,7 +152,9 @@ struct App* init(void (*user_before_initialization)(struct App* self), void (*us
         .log = false,
         .MAX_FRAMES_IN_FLIGHT = 2,
         .before_initialization = user_before_initialization,
+        .before_init_arg = before_init_arg,
         .before_draw = user_before_draw,
+        .before_draw_arg = before_draw_arg
     };
     struct App* a = calloc(1, sizeof(app));
     memcpy(a, &app, sizeof(app));

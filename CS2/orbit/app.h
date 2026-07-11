@@ -27,8 +27,10 @@ struct App {
     uint64_t last_resize;
 
     void (*run)(struct App* self); 
-    void (*before_initialization)(struct App* self);
-    void (*before_draw)(struct App* self);
+    void (*before_initialization)(struct App* self, void* before_init_arg);
+    void* before_init_arg;
+    void (*before_draw)(struct App* self, void* before_draw_arg);
+    void* before_draw_arg;
     struct extension_info extensions; // instance extensions
     GLFWwindow* window;
     VkInstance instance; // connection to the vulkan library
@@ -91,7 +93,7 @@ void _clean_up(struct App* self);
 void _init_window(struct App* self);
 void _init_vulkan(struct App* self);
 void _main_loop(struct App* self);
-struct App* init(void (*user_before_draw)(struct App* self), void (*user_before_initialization)(struct App* self));
+struct App* init(void (*user_before_initialization)(struct App* self, void* arg), void* before_init_arg, void (*user_before_draw)(struct App* self, void* arg), void* before_draw_arg);
 void destroy_app(struct App* a);
 
 #endif

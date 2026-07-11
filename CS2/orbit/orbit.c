@@ -4,23 +4,37 @@
 #include <time.h>
 #include <stdatomic.h>
 
-void before_initialization(struct App* app);
-void before_draw(struct App* app);
-void handle_recreation(struct App* app);
+void before_initialization(struct App* app, void* arg);
+void before_draw(struct App* app, void* arg);
+void handle_recreation(struct App* app, void* arg);
+
 
 int main() {
-    struct App* app = init(before_initialization, before_draw);
+    struct Circle p1 = {.radius = 40, .x = 10, .y = 10, .color = {10, 20, 100}};
+    struct Circle p2 = {.radius = 60, .x = 100, .y = 10, .color = {100, 20, 100}};
+    struct TransformableCircle circle_one = {.circle = p1, .transformation = {0, 0}};
+    struct TransformableCircle circle_two = {.circle = p2, .transformation = {0, 0}};
+    struct TransformableCircleArr* circle_arr = malloc(sizeof(struct TransformableCircleArr));
+    circle_arr->circles = calloc(2, sizeof(struct TransformableCircle));
+    circle_arr->circles[0] = circle_one;
+    circle_arr->circles[1] = circle_two;
+    circle_arr->count = 2;
+
+    struct App* app = init(before_initialization, circle_arr, before_draw, circle_arr);
     app->run(app);
     destroy_app(app);
+    free(circle_arr->circles);
+    free(circle_arr);
 }
 
 
-void before_initialization(struct App* app) {
-    handle_recreation(app);
+void before_initialization(struct App* app, void* arg) {
+    handle_recreation(app, arg);
 }
 
 
-void before_draw(struct App* app) {
+void before_draw(struct App* app, void* arg) {
+    
     static float first_trans = 0.0f;
 
     if (app->user_transformation_count != app->vertex_count || app->user_transformations == NULL) {
@@ -39,10 +53,11 @@ void before_draw(struct App* app) {
     }
 
     for (int i = 0; i < app->vertex_count; i++) {
-        app->user_transformations[i][0] = first_trans;
-        app->user_transformations[i][1] = first_trans;
+        printf("%f %d\n",  app->user_transformations[i][0], i);
+        app->user_transformations[i][0] = first_trans * (i >= 4 ? 0.1f : 0.0f);
+        app->user_transformations[i][1] = first_trans * (i >= 4 ? 0.1f : 0.0f);
     }
-    first_trans += 0.0001;
+    first_trans += 0.001;
     
     if (atomic_load(&app->frame_buffer_resized)) {
         handle_recreation(app);
@@ -50,7 +65,7 @@ void before_draw(struct App* app) {
 }
 
 
-void handle_recreation(struct App* app) {
+void handle_recreation(struct App* app, void* arg) { 
     if (app->vertices != NULL && app->indices != NULL) {
         free(app->vertices);
         free(app->indices);
@@ -59,9 +74,4 @@ void handle_recreation(struct App* app) {
     }
     app->index_count = 0;
     app->vertex_count = 0;
-    struct Circle d = {.radius = 40, .x = 10, .y = 10, .color = {10, 20, 100}};
-    struct Circle e = {.radius = 60, .x = 100, .y = 10, .color = {100, 20, 100}};
-
-    create_circle(app, d);
-    create_circle(app, e);
 }
