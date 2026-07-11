@@ -26,7 +26,7 @@ DWORD WINAPI start_threaded_draw_loop(LPVOID still_running) {
         double delta_time = (double)(start_time - prev_time) * 1e-6;
 
         if (a->before_draw != NULL) {
-            a->before_draw(a);
+            a->before_draw(a, a->before_draw_arg);
         }
         _draw_frame(a);
 

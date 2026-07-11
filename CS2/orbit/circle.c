@@ -24,10 +24,11 @@ struct TransformableCircle {
     float transformation[2];
 };
 
+
 struct TransformableCircleArr { // replace with orbit list laterrrrrrr
     struct TransformableCircle* circles;
     uint32_t count;
-}
+};
 
 
 void create_circle(struct App* self, struct Circle c) {

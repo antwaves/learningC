@@ -16,8 +16,8 @@ int main() {
     struct TransformableCircle circle_two = {.circle = p2, .transformation = {0, 0}};
     struct TransformableCircleArr* circle_arr = malloc(sizeof(struct TransformableCircleArr));
     circle_arr->circles = calloc(2, sizeof(struct TransformableCircle));
-    circle_arr->circles[0] = circle_one;
-    circle_arr->circles[1] = circle_two;
+    circle_arr->circles[0] = circle_two;
+    circle_arr->circles[1] = circle_one;
     circle_arr->count = 2;
 
     struct App* app = init(before_initialization, circle_arr, before_draw, circle_arr);
@@ -34,8 +34,13 @@ void before_initialization(struct App* app, void* arg) {
 
 
 void before_draw(struct App* app, void* arg) {
-    
     static float first_trans = 0.0f;
+
+    struct TransformableCircleArr* c = (struct TransformableCircleArr*)app->before_draw_arg;
+    for (int i = 0; i < c->count; i++) {
+        c->circles[i].transformation[0] += 1.0f / app->width;
+        c->circles[i].transformation[1] += 1.0f / app->height;
+    }
 
     if (app->user_transformation_count != app->vertex_count || app->user_transformations == NULL) {
         float** old = app->user_transformations;
@@ -52,15 +57,16 @@ void before_draw(struct App* app, void* arg) {
         }
     }
 
-    for (int i = 0; i < app->vertex_count; i++) {
-        printf("%f %d\n",  app->user_transformations[i][0], i);
-        app->user_transformations[i][0] = first_trans * (i >= 4 ? 0.1f : 0.0f);
-        app->user_transformations[i][1] = first_trans * (i >= 4 ? 0.1f : 0.0f);
+    struct TransformableCircleArr list = *((struct TransformableCircleArr*)arg);
+    for (int i = 0; i < list.count; i++) {
+        for (int j = 0; j < 4; j++) {
+            app->user_transformations[i * 4 + j][0] = list.circles->transformation[0];
+            app->user_transformations[i * 4 + j][1] = list.circles->transformation[1];
+        }
     }
-    first_trans += 0.001;
-    
+
     if (atomic_load(&app->frame_buffer_resized)) {
-        handle_recreation(app);
+        handle_recreation(app, arg);
     }
 }
 
@@ -74,4 +80,9 @@ void handle_recreation(struct App* app, void* arg) {
     }
     app->index_count = 0;
     app->vertex_count = 0;
+
+    struct TransformableCircleArr list = *((struct TransformableCircleArr*)arg);
+    for (int i = 0; i < list.count; i++) {
+        create_circle(app, list.circles[i].circle);
+    }
 }
