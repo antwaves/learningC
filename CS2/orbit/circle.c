@@ -1,34 +1,7 @@
-#include <stdint.h>
-#include <GLFW/glfw3.h>
 #include <string.h>
 #include <cglm/cglm.h>
 
-#include "app.h"
-#include "vertex.h"
-
-
-struct Circle;
-void create_circle_vertices(Vertex* vertex_staging_buffer, uint16_t* index_staging_buffer, GLFWwindow* window, struct Circle c);
-
-
-struct Circle {
-    uint16_t radius;
-    int x;
-    int y;
-    unsigned char color[3];
-};
-
-
-struct TransformableCircle {
-    struct Circle circle;
-    float transformation[2];
-};
-
-
-struct TransformableCircleArr { // replace with orbit list laterrrrrrr
-    struct TransformableCircle* circles;
-    uint32_t count;
-};
+#include "circle.h"
 
 
 void create_circle(struct App* self, struct Circle c) {

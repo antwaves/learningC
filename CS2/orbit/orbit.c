@@ -1,5 +1,5 @@
 #include "app.c"
-#include "circle.c"
+#include "planet.h"
 
 #include <time.h>
 #include <stdatomic.h>
@@ -10,15 +10,12 @@ void handle_recreation(struct App* app, void* arg);
 
 
 int main() {
-    struct Circle p1 = {.radius = 40, .x = 10, .y = 10, .color = {10, 20, 100}};
-    struct Circle p2 = {.radius = 60, .x = 100, .y = 10, .color = {100, 20, 100}};
-    struct TransformableCircle circle_one = {.circle = p1, .transformation = {0, 0}};
-    struct TransformableCircle circle_two = {.circle = p2, .transformation = {0, 0}};
-    struct TransformableCircleArr* circle_arr = malloc(sizeof(struct TransformableCircleArr));
-    circle_arr->circles = calloc(2, sizeof(struct TransformableCircle));
-    circle_arr->circles[0] = circle_two;
-    circle_arr->circles[1] = circle_one;
-    circle_arr->count = 2;
+    
+    struct Planet p1 = planet_init(300, 300, 0.012f, -0.0432f, 1000);
+    struct Planet p2 = planet_init(300, 400, -2.4f, 0.0f, 5);
+    struct Planet p3 = planet_init(550, 300, 0.0f, 2.0f, 20);
+    struct Planet p4 = planet_init(565, 300, 0.0f, 3.2f, 1);
+
 
     struct App* app = init(before_initialization, circle_arr, before_draw, circle_arr);
     app->run(app);
