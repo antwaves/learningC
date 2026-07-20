@@ -147,8 +147,8 @@ struct App* init(void (*user_before_initialization)(struct App* self, void* arg)
     setup_precise_sleep(); // needed for frame timing
     struct App app = {
         .run = run,
-        .width = 800,
-        .height = 800,
+        .width = 600,
+        .height = 600,
         .log = false,
         .MAX_FRAMES_IN_FLIGHT = 2,
         .before_initialization = user_before_initialization,

@@ -6,15 +6,16 @@
 struct Planet planet_init(int x, int y, float vx, float vy, uint32_t mass) {
     struct Planet p = {
         .circle = {
-            .radius = 2 * pow(mass, 0.3), 
-            . x = x, .y = y, 
+            .radius = 2 * pow((float)mass, 0.3), 
+            .x = (float)x, .y = (float)y, 
             .color = {255, 156, 222}
         },
+        .start_pos = {x, y},
         .velocity = {vx, vy},
         .acceleration = {0.0f, 0.0f},
         .mass = mass
     };
-
+    // update radius to allow it to be more precise
     return p;
 }
 

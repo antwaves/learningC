@@ -6,6 +6,7 @@
 #define PLANET
 struct Planet {
     struct Circle circle;
+    vec2 start_pos;
     vec2 velocity;
     vec2 acceleration;
     uint32_t mass;

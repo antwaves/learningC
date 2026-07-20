@@ -30,6 +30,7 @@ void create_circle(struct App* self, struct Circle c) {
     memcpy(&self->vertices[self->vertex_count - 4], vertex_staging, 4 * sizeof(Vertex));
     memcpy(&self->indices[self->index_count - 6], index_staging, 6 * sizeof(uint16_t));
     
+
     free(old_vertices);
     free(old_indices);
     free(vertex_staging);
@@ -42,10 +43,11 @@ void create_circle_vertices(Vertex* vertex_staging_buffer, uint16_t* index_stagi
     int width = 0, height = 0;
     glfwGetFramebufferSize(window, &width, &height);
 
-    float norm_x = (float)c.x / width;
-    float norm_y = (float)c.y / height;
-    float norm_x_radius = (float)c.radius / width;
-    float norm_y_radius = (float)c.radius / height;
+    double norm_x = ((float)c.x / width) * 2.0f - 1.0f;
+    double norm_y = ((float)c.y / height) * 2.0f - 1.0f;
+    printf("%f %f ", norm_x, norm_y);
+    float norm_x_radius = ((float)c.radius / width) * 2;
+    float norm_y_radius = ((float)c.radius / height * 2);
 
     vec3 color = {(float)c.color[0] / 255, (float)c.color[1] / 255, (float)c.color[2] / 255};
     Vertex top_left = {{norm_x - norm_x_radius, norm_y - norm_y_radius}, {color[0], color[1], color[2]}, {0.0f, 0.0f}};

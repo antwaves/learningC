@@ -12,8 +12,8 @@ void create_circle_vertices(Vertex* vertex_staging_buffer, uint16_t* index_stagi
 
 struct Circle {
     uint16_t radius;
-    int x;
-    int y;
+    float x;
+    float y;
     unsigned char color[3];
 };
 #endif
