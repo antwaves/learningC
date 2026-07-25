@@ -45,7 +45,6 @@ void create_circle_vertices(Vertex* vertex_staging_buffer, uint16_t* index_stagi
 
     double norm_x = ((float)c.x / width) * 2.0f - 1.0f;
     double norm_y = ((float)c.y / height) * 2.0f - 1.0f;
-    printf("%f %f ", norm_x, norm_y);
     float norm_x_radius = ((float)c.radius / width) * 2;
     float norm_y_radius = ((float)c.radius / height * 2);
 

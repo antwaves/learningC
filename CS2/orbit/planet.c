@@ -25,15 +25,19 @@ void update_planet_acceleration(struct Planet* self, struct Planet* planets, int
     self->acceleration[1] = 0;
 
     for (int i = 0 ; i < planet_count; i++) {
-        if (self != &planets[planet_count]) {
-            struct Circle other_circ = planets[planet_count].circle;
-            int dx = other_circ.x - self->circle.x;
-            int dy = other_circ.y - self->circle.y;
+        if (self != &planets[i]) {
+            struct Circle other_circ = planets[i].circle;
+            float dx = other_circ.x - self->circle.x;
+            float dy = other_circ.y - self->circle.y;
             double r = sqrt(dx * dx + dy * dy);
-            self->acceleration[0] = dx * planets[planet_count].mass / pow(r, 3);
-            self->acceleration[1] = dy * planets[planet_count].mass / pow(r, 3);
+
+            //printf("%f", other_circ.x);
+            self->acceleration[0] += dx * planets[i].mass / pow(r, 3);
+            self->acceleration[1] += dy * planets[i].mass / pow(r, 3);
         }
     }
+
+    //printf("AAAAAAAAAAAAAAAAAAAAAAAaa %f AAAAAAAAa", self->acceleration[0]);
 }
 
 
