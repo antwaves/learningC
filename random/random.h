@@ -13,5 +13,4 @@
 #define _c 0xefc60000UL
 #define d UINT32_MAX
 
-
 int randint(int min_val, int max_val);
