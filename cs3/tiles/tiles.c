@@ -6,7 +6,6 @@
 
 
 wchar_t get_middle(bool left, bool right) {
-    // 0 = 1, 1 = 2
     if (!left && !right) { return L'│'; }
     else if (!left && right) { return L'├'; }
     else if (left && !right) { return L'┤'; }
@@ -14,11 +13,18 @@ wchar_t get_middle(bool left, bool right) {
 }
 
 
-void print_tiling(uint32_t board) {
+void print_tiling(void* bits, size_t size) {
+    uint32_t board = *((uint32_t*)bits) << (32 - size);
+    int power = 0;
+    int s = size;
+    while (s > 1) { s >>= 1; power++; }
+
     wchar_t** rows = malloc(sizeof(wchar_t*) * 3);
-    uint8_t size_bits = 5;
+    uint8_t size_bits = power;
     uint8_t board_size = (board >> (32 - size_bits));
     int ending_chars = 2;
+
+    board_size = (board_size < (size - size_bits)) ? board_size : size - size_bits;
 
     int to_alloc = 1;
     for (int i = 0; i < board_size; i++) {
@@ -70,7 +76,7 @@ void print_tiling(uint32_t board) {
     rows[2][pos] = L'\n';
     pos++;
 
-    rows[0][pos++] = L'\0';
+    rows[0][pos] = L'\0';
     rows[1][pos] = L'\0';
     rows[2][pos] = L'\0';
 
@@ -83,15 +89,30 @@ void print_tiling(uint32_t board) {
 }
 
 
+uint32_t* get_tilings(int n) {
+    if (n == 0) {
+        uint32_t* val = malloc(sizeof(uint32_t));
+        *val = 0;
+        return val;
+    }
+    
+    if (n == 1) {
+        uint32_t* val = malloc(sizeof(uint32_t));
+        // *val = ;
+        return val;
+    }
+    return 0;
+}
+
+
 int main() {
     setlocale(LC_ALL, "en_US.UTF-8"); 
-    uint32_t board = 0 | (0b00110011001 << 21);
-    printf("%d\n", board);
-    printf("%d\n", board >> 27);
-    printf("%d\n", (board << 5) >> (31));
+    uint8_t* board = malloc(sizeof(uint16_t));
+    *board = 0b10100000;
 
-    print_tiling(board);
+    print_tiling(board, 8);
 
+    free(board);
 }
 
 // use a bitmask to repersent the tiles
