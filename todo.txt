@@ -1,3 +1,8 @@
-- bit-animate (current)
-- orbit
-- wordo-guesser
+- tiles
+- fibonacci
+- flatten
+- sorting
+- maze
+- metro
+- mod practice
+- tower of hanoi
