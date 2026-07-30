@@ -1,8 +1,0 @@
-- tiles
-- fibonacci
-- flatten
-- sorting
-- maze
-- metro
-- mod practice
-- tower of hanoi
