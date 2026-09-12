@@ -16,7 +16,7 @@ void _pick_physical_device(struct App* self) { // query physical devices and pic
     vkEnumeratePhysicalDevices(self->instance, &device_count, NULL);
 
     if (device_count == 0) {
-        fprintf_s(stderr, "Failed to find GPU's with vulkan support");
+        fprintf_s(stderr, "Failed to find GPU with vulkan support");
         exit(EXIT_FAILURE);
     }
 

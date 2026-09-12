@@ -1,0 +1,1 @@
+This repository stores my progress in learning the C programming language. It includes code from tutorials, and code from my computer science classes rewritten in C.  I implement a mersenne_twister in /random, implement some string functions in /string, and (what I consider most impressively) implement a 2d renderer **from scratch** using vulkan in /CS2/orbit

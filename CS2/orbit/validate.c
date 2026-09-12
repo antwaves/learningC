@@ -49,7 +49,7 @@ void check_validation_layers() { // checks for validation layer support from our
         }
 
         required_layers++;
-        contains_all = contains_all && contains;
+        contains_all &= contains;
     }
 
     if (!contains_all) {
